@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using backend_claro.Application.Interfaces;
 using backend_claro.Application.DTOs.Auth;
 using backend_claro.Domain.Entities;
+using backend_claro.Application.Mappings;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -31,24 +32,10 @@ public class AuthService : IAuthService
             throw new Exception("El correo electrónico ya está registrado.");
         }
 
-        // 2. Encriptar (Hashear) la contraseña con BCrypt
-        string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        // Llamamos al método Mapeado
+        var nuevaCuenta = request.ToEntity();
 
-        // 3. Construir las entidades unidas (Entity Framework maneja la relación 1 a 1 automáticamente)
-        var nuevaCuenta = new CuentaUsuario
-        {
-            Email = request.Email,
-            PasswordHash = passwordHash,
-            Rol = request.Rol,
-            FechaRegistro = DateTime.UtcNow,
-            // Construimos el perfil anidado directamente
-            Perfil = new Usuario
-            {
-                NombreCompleto = request.NombreCompleto,
-                DocumentoIdentidad = request.DocumentoIdentidad,
-                FechaActualizacion = DateTime.UtcNow
-            }
-        };
+        nuevaCuenta.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         // 4. Guardar en la base de datos de PostgreSQL
         _context.CuentaUsuarios.Add(nuevaCuenta);
