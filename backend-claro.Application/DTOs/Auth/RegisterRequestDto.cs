@@ -1,3 +1,5 @@
+using backend_claro.Domain.Enums;
+
 namespace backend_claro.Application.DTOs.Auth;
 
 public class RegisterRequestDto
@@ -6,5 +8,5 @@ public class RegisterRequestDto
     public string Password { get; set;} = string.Empty;
     public string NombreCompleto { get; set;} = string.Empty;
     public string DocumentoIdentidad { get; set;} = string.Empty;
-    public string Rol { get; set; } = "Tecnico";
+    public Rol Rol { get; set; } =Rol.ALMACEN;
 }

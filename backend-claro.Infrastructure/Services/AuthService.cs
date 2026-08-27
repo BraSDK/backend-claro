@@ -83,7 +83,7 @@ public class AuthService : IAuthService
     // Metodo provado para fabricar el Token
     private string GenerarTokenJwt(CuentaUsuario cuenta)
     {
-        // Leer las variables es appsettings.json
+        // Leer las variables es 
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["secretKey"];
         var key = Encoding.ASCII.GetBytes(secretKey!);
@@ -93,7 +93,7 @@ public class AuthService : IAuthService
         {
             new Claim(JwtRegisteredClaimNames.Sub, cuenta.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, cuenta.Email),
-            new Claim("rol", cuenta.Rol) //Guardamos el rol para futuras validaciones
+            new Claim(ClaimTypes.Role, cuenta.Rol.ToString()), //Guardamos el rol para futuras validaciones
         };
 
         // Configurar los detalles del token (firma, expiracion, etc.)
