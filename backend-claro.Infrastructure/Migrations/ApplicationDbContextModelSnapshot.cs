@@ -42,9 +42,8 @@ namespace backend_claro.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Rol")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Rol")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

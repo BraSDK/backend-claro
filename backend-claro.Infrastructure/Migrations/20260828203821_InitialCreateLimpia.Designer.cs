@@ -12,8 +12,8 @@ using backend_claro.Infrastructure.Persistence;
 namespace backend_claro.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260824232159_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260828203821_InitialCreateLimpia")]
+    partial class InitialCreateLimpia
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -45,9 +45,8 @@ namespace backend_claro.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Rol")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Rol")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
