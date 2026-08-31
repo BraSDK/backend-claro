@@ -3,6 +3,7 @@ using backend_claro.Application.Interfaces;
 using backend_claro.Application.DTOs.Auth;
 using Microsoft.AspNetCore.Authorization;
 using backend_claro.Domain.Enums;
+using System.Security.Principal;
 
 namespace backend_claro.API.Controllers;
 

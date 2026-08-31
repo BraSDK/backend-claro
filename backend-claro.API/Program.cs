@@ -57,6 +57,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
 builder.Services.AddScoped<IAuthService, backend_claro.Infrastructure.Services.AuthService>();
+builder.Services.AddScoped<IFileStorageService, backend_claro.Infrastructure.Services.FileStorageService>();
+builder.Services.AddScoped<IOrdenTrabajoService, backend_claro.Infrastructure.Services.OrdenTrabajoService>();
 
 // CONFIGURAR LA VALIDACIÓN DEL TOKEN JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

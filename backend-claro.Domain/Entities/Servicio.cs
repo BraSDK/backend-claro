@@ -6,7 +6,7 @@ namespace backend_claro.Domain.Entities;
 public class Servicio
 {
 
-        public enum CategoriaServicio
+    public enum CategoriaServicio
     {
         HFC = 0,
         FTH = 1,
