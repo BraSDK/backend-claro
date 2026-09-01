@@ -12,6 +12,6 @@ public class ServicioConfiguration : IEntityTypeConfiguration<Servicio>
         //builder.Property(s => s.Codigo).ValueGeneratedNever();
         builder.Property(s => s.Nombre).IsRequired().HasMaxLength(150);
         builder.Property(s => s.Precio).IsRequired().HasColumnType("decimal(18,2)");
-        builder.HasIndex();
+        builder.HasIndex(s => s.Nombre);
     }
 }

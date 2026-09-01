@@ -4,7 +4,7 @@ using backend_claro.Application.Interfaces;
 using backend_claro.Application.DTOs.User;
 using backend_claro.Application.Mappings;
 
-namespace backend_claro.Insfrastructure.Services;
+namespace backend_claro.Infrastructure.Services;
 
 public class UserService : IUserService
 {
@@ -47,9 +47,9 @@ public class UserService : IUserService
         }
 
         //Manejo de la contraseña
-        if (!string.IsNullOrWhiteSpace(request.PasswordHash))
+        if (!string.IsNullOrWhiteSpace(request.PasswordNew))
         {
-            usuarioExistente.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.PasswordHash);
+            usuarioExistente.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.PasswordNew);
         }
 
         await _context.SaveChangesAsync();

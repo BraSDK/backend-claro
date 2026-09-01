@@ -36,8 +36,8 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            // Si el correo ya existe, devolvemos un 400 Bad Request
-            return BadRequest(new { error = ex.Message });
+            var errorReal = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+            return BadRequest(new { error = errorReal });
         }
     }
 
