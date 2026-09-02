@@ -6,6 +6,7 @@ using System.Data.Common;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Http;
 using backend_claro.Application.DTOs;
+using backend_claro.Application;
 namespace backend_claro.Infrastructure.Services;
 
 public class OrdenTrabajoService : IOrdenTrabajoService
@@ -43,10 +44,76 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         
         return ordenes;
     }
-            
-        
 
-    
+    public async Task<DetailsDto> AsyncObtenerPorId(int id)
+    {
+        var OrdenTrabajo = await _context.Ordenes
+                                         .Include(o => o.Archivos)
+                                         .Include(o => o.Detalles)
+                                         .FirstOrDefaultAsync(o => o.OrdenTrabajoId == id);
+        if (OrdenTrabajo == null)
+        {
+            throw new KeyNotFoundException("No se encontraron órdenes de trabajo registradas.");
+        }
+
+        DetailsDto ordenEncontrada = new DetailsDto
+        {
+                OrdenId = OrdenTrabajo.OrdenTrabajoId,
+                Sot = OrdenTrabajo.Sot,
+                Descripcion  = OrdenTrabajo.Descripcion,
+                Estado = OrdenTrabajo.Estado,
+                Detalles = OrdenTrabajo.Detalles.Select(a => new OrdenTrabajoDetalleDto
+                {
+                    Cantidad = a.Cantidad,
+                    PrecioTotal = a.PrecioTotal,
+                    Tipo  = a.Tipo
+                }).ToList() ?? [],
+                Imagenes = OrdenTrabajo.Archivos.Select(a =>new OrdenArchivoDto
+                {
+                    NombreArchivo = a.NombreArchivo,
+                    Src = a.Src,
+                    
+                }).ToList() ?? []
+        };
+
+        return ordenEncontrada;
+    }
+
+    public async Task<DetailsDto> AsyncObtenerPorSot(int sot)
+    {
+        var OrdenTrabajo =  await _context.Ordenes
+                                          .Include(o => o.Archivos)
+                                          .Include(o => o.Detalles)
+                                          .FirstOrDefaultAsync(o => o.Sot == sot);
+
+        if(OrdenTrabajo == null)
+        {
+            throw new KeyNotFoundException($"El registro con ID {sot} no fue encontrado.");
+        }
+
+        return new DetailsDto
+        {
+                OrdenId = OrdenTrabajo.OrdenTrabajoId,
+                Sot = OrdenTrabajo.Sot,
+                Descripcion  = OrdenTrabajo.Descripcion,
+                Estado = OrdenTrabajo.Estado,
+
+                Detalles = OrdenTrabajo.Detalles.Select(a => new OrdenTrabajoDetalleDto
+                {
+                    Cantidad = a.Cantidad,
+                    PrecioTotal = a.PrecioTotal,
+                    Tipo  = a.Tipo
+                }).ToList() ?? [],
+                Imagenes = OrdenTrabajo.Archivos.Select(a =>new OrdenArchivoDto
+                {
+                    NombreArchivo = a.NombreArchivo,
+                    Src = a.Src,
+                    
+                }).ToList() ?? []
+
+
+        };
+    }
 
     public async Task<OrdenTrabajo> AsyncRegister(OrdenTrabajoDto request)
     {

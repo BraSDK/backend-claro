@@ -52,6 +52,32 @@ public class OrdenTrabajoController : ControllerBase
              
         return Ok( await _service.AsyncListar());
     }
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> AsyncObtenerPorId(int id)
+    {
+        try
+        {
+            return Ok(await _service.AsyncObtenerPorId(id));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });   
+        }
+    }
+   [HttpGet("sot/{sot}")]
+    public async Task<IActionResult> AsyncObtenerPorSot(int sot)
+    {
+        try
+        {
+            return Ok(await _service.AsyncObtenerPorSot(sot));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });   
+        }
+    }
+
         
     
 }

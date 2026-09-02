@@ -7,6 +7,8 @@ public interface IOrdenTrabajoService
 {
     public Task<OrdenTrabajo> AsyncRegister(OrdenTrabajoDto request);
     public Task<List<ListViewDto>> AsyncListar();
+    public Task<DetailsDto> AsyncObtenerPorSot(int sot);
+    public Task<DetailsDto> AsyncObtenerPorId(int id);
     public Task<string> AsyncEdit(OrdenTrabajoDto request);
     public Task<string> AsyncUpdate(OrdenTrabajoDto request);
 }

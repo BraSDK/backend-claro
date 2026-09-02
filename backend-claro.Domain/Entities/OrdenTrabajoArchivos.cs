@@ -13,7 +13,5 @@ public class OrdenTrabajoArchivo
 
     public int OrdenTrabajoId { get; set; } 
     public OrdenTrabajo OrdenT {get; set;} = null!;
-    
-
 
 }
