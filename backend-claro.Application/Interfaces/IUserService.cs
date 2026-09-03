@@ -4,5 +4,5 @@ namespace backend_claro.Application.Interfaces;
 
 public interface IUserService
 {
-    Task<string> UpdateAsync(EditRequestDto request);
+    Task<string> UpdateAsync(EditRequestDto request, string rolLogueado);
 }

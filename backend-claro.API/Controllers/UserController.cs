@@ -4,6 +4,9 @@ using backend_claro.Application.Interfaces;
 using backend_claro.Application.DTOs.User;
 using backend_claro.Domain.Enums;
 
+// Libreria de de Claims - Token
+using System.Security.Claims;
+
 namespace backend_claro.API.Controllers;
 
 [ApiController]
@@ -19,13 +22,24 @@ public class UserController : ControllerBase
         _userService = userService;
     }
 
-    [Authorize(Roles = nameof(Rol.ADMIN))]
+    [Authorize]
     [HttpPut("update")]
     public async Task<IActionResult> Update([FromBody] EditRequestDto request)
     {
+        // Extraemos el ID del usuario que envia el token
+        var logueadoIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var rolLogueado = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+
+        // Para comparar el ID
+        int logueadoId = int.Parse(logueadoIdStr ?? "0");
+
+        if ( logueadoId != request.Id && rolLogueado != nameof(Rol.ADMIN))
+        {
+            return Forbid();
+        }
         try
         {
-            var resultado = await _userService.UpdateAsync(request);
+            var resultado = await _userService.UpdateAsync(request, rolLogueado);
 
             return Ok( new  { message =  resultado});
         }

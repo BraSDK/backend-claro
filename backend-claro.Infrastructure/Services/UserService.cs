@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using backend_claro.Application.Interfaces;
 using backend_claro.Application.DTOs.User;
 using backend_claro.Application.Mappings;
+using backend_claro.Domain.Enums;
 
 namespace backend_claro.Infrastructure.Services;
 
@@ -19,7 +20,7 @@ public class UserService : IUserService
         _configuration = configuration;
     }
 
-    public async Task<string> UpdateAsync(EditRequestDto request)
+    public async Task<string> UpdateAsync(EditRequestDto request, string rolLogueado)
     {
         // 1. Verificar si el correo ya está registrado
         var usuarioExistente = await _context.CuentaUsuarios.Include(c => c.Perfil).FirstOrDefaultAsync(c => c.Id == request.Id);
@@ -36,8 +37,20 @@ public class UserService : IUserService
 
         // Mapeo Manual: Actulizamos SOLO las propiedades que cambian en la entidad rastreada
         usuarioExistente.Email = request.Email;
-        usuarioExistente.Rol = request.Rol;
 
+        //Verifica si hay un rol distinto en la base de datos
+        if (request.Rol != usuarioExistente.Rol)
+        {
+            if (rolLogueado != nameof(Rol.ADMIN))
+            {
+                throw new Exception("Acceso denegado: No tienes permisos para cambiar el rol de la cuenta.");
+            }
+
+            //Si es admin, aplicamos el cambio
+            usuarioExistente.Rol = request.Rol;
+        }
+        
+        
         //Actualizamos el perfil asociado - Si no llega encontrarlo vacio, solo actuliza los datos existentes
         if (usuarioExistente.Perfil != null)
         {

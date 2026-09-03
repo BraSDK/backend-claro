@@ -7,6 +7,7 @@ public interface IApplicationDbContext
 {
     DbSet<CuentaUsuario> CuentaUsuarios { get; set; }
     DbSet<Usuario> Usuarios { get; set; }
+    DbSet<Servicio> Servicios { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
