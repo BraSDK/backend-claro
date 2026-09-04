@@ -22,6 +22,7 @@ public static class ServiceMapper
     {
         return new Servicio
         {
+            Codigo = request.Codigo,
             Nombre = request.Nombre,
             Precio = request.Precio,
             Categoria = request.Categoria,

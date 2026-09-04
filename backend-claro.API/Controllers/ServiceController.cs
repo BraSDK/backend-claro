@@ -20,8 +20,22 @@ public class ServiceController : ControllerBase
         _serviceService = serviceService;
     }
 
+    [HttpGet("{codigo}")]
+    public async Task<IActionResult> GetById(int codigo)
+    {
+        try
+        {
+            var resultado = await _serviceService.GetByIdAsync(codigo);
+            return Ok ( new { message = resultado});
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     [HttpGet("list")]
-    public async Task<IActionResult> List([FromBody] ListRequestDto request)
+    public async Task<IActionResult> List([FromQuery] ListRequestDto request)
     {
         var resultado = await _serviceService.ListAsync(request);
         return Ok(resultado);

@@ -23,8 +23,10 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         // 3. Inyeccion de IUserService:
         services.AddScoped<IUserService, UserService>(); 
+        // 4. Inyeccion de IServiceService:
+        services.AddScoped<IServiceService, ServiceService>(); 
 
-        // 3. Configuración JWT
+        // 5. Configuración JWT
         var jwtSettings = configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"];
 

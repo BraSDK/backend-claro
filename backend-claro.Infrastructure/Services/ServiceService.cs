@@ -16,7 +16,20 @@ public class ServiceService : IServiceService
     {
         _context = context;
         _configuration = configuration;
-    }   
+    }
+
+    public async Task<ServiceResponseDto> GetByIdAsync(int codigo)
+    {
+        var ObtenerServicio = await _context.Servicios.FindAsync(codigo); //Buscar
+        if ( ObtenerServicio == null) throw new Exception ("Servicio no encontrado");
+        
+        return new ServiceResponseDto{
+            Codigo = ObtenerServicio.Codigo,
+            Nombre = ObtenerServicio.Nombre,
+            Precio = ObtenerServicio.Precio,
+            Categoria = ObtenerServicio.Categoria.ToString() //Campo ENUM
+        };
+    }
 
     public async Task<object> ListAsync(ListRequestDto request)
     {
