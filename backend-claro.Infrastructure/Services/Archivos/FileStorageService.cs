@@ -1,5 +1,6 @@
 using backend_claro.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Configuration;
 
 
@@ -12,6 +13,33 @@ public class FileStorageService : IFileStorageService
     {
         _config = config;
     }
+
+
+public async Task<string> EliminarArchivo(string src)
+{
+    string? rutaBase = _config["Storage:RutaBase"];
+
+    if (string.IsNullOrEmpty(rutaBase))
+    {
+        throw new InvalidOperationException("La ruta base no está configurada.");
+    }
+
+    string rutaFisica = Path.GetFullPath(Path.Combine(rutaBase, src));
+
+    if (!rutaFisica.StartsWith(Path.GetFullPath(rutaBase), StringComparison.OrdinalIgnoreCase))
+    {
+        throw new UnauthorizedAccessException("Acceso denegado a la ruta especificada.");
+    }
+
+    if (File.Exists(rutaFisica))
+    {
+        File.Delete(rutaFisica);
+    }
+
+    // 4. Corrección de Task/async: Retornar el resultado directamente sin 'async'
+    return rutaFisica;
+}
+
     async Task<string> IFileStorageService.GestionarArchivo(IFormFile archivo, string src)
     {
 
