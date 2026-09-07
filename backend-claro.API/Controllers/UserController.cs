@@ -23,6 +23,14 @@ public class UserController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("list")]
+    public async Task<IActionResult> List([FromQuery] UserListResponseDto request)
+    {
+        var resultado = await _userService.ListAsync(request);
+        return Ok(resultado);
+    }
+
+    [Authorize]
     [HttpPut("update")]
     public async Task<IActionResult> Update([FromBody] EditRequestDto request)
     {

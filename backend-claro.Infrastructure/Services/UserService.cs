@@ -29,7 +29,7 @@ public class UserService : IUserService
         {
             query = query.Where(u => u.Perfil.NombreCompleto.ToLower().Contains(request.BuscarNombreCompleto.ToLower()));
         }        
-        if (request.Rol.HasValue)
+        if (request.Rol.HasValue) //Tiene un valor?
         {
             query = query.Where(u => u.Rol == request.Rol.Value);
         }
