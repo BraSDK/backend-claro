@@ -23,6 +23,14 @@ public class UserController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("list")]
+    public async Task<IActionResult> List([FromQuery] UserListResponseDto request)
+    {
+        var resultado = await _userService.ListAsync(request);
+        return Ok(resultado);
+    }
+
+    [Authorize]
     [HttpPut("update")]
     public async Task<IActionResult> Update([FromBody] EditRequestDto request)
     {
@@ -47,6 +55,20 @@ public class UserController : ControllerBase
         {
             // Atrapamos el error y le enviamos un Bad Request (400) al frontend
             return BadRequest(new { error = ex.Message });
+        }
+    }
+    [Authorize(Roles = nameof(Rol.ADMIN))]
+    [HttpDelete ("{codigo}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        try
+        {
+            var resultado = await _userService.DeleteAsync(id);
+            return Ok(new { message = resultado});
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message});
         }
     }
 }
