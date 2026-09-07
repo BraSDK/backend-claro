@@ -26,6 +26,10 @@ public static class DependencyInjection
         // 4. Inyeccion de IServiceService:
         services.AddScoped<IServiceService, ServiceService>(); 
         services.AddScoped<IOrdenTrabajoService, OrdenTrabajoService>();
+        services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
+        
+        services.AddScoped<IFileStorageService, backend_claro.Infrastructure.Services.FileStorageService>();
+        services.AddScoped<IOrdenTrabajoService, backend_claro.Infrastructure.Services.OrdenTrabajoService>();
 
         // 5. Configuración JWT
         var jwtSettings = configuration.GetSection("JwtSettings");
