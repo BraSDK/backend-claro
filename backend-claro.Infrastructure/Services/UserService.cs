@@ -4,6 +4,7 @@ using backend_claro.Application.Interfaces;
 using backend_claro.Application.DTOs.User;
 using backend_claro.Application.Mappings;
 using backend_claro.Domain.Enums;
+using backend_claro.Domain.Entities;
 
 namespace backend_claro.Infrastructure.Services;
 
@@ -18,6 +19,36 @@ public class UserService : IUserService
     {
         _context = context;
         _configuration = configuration;
+    }
+
+    public async Task<object> ListAsync(UserListResponseDto request)
+    {
+        var query = _context.CuentaUsuarios.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(request.BuscarNombreCompleto)) //En el caso que que no tenga datos o sea null
+        {
+            query = query.Where(u => u.Perfil.NombreCompleto.ToLower().Contains(request.BuscarNombreCompleto.ToLower()));
+        }        
+        if (request.Rol.HasValue)
+        {
+            query = query.Where(u => u.Rol == request.Rol.Value);
+        }
+        
+        // Contamos para la paginacion de React
+        var totalRegistros = await query.CountAsync();
+
+        // Paginamos y aplicamos 
+        var lista = await query
+            .Skip((request.Pagina - 1) * request.CantidadPorPagina)
+            .Take(request.CantidadPorPagina)
+            .ToResponseDto()
+            .ToListAsync();
+        return new
+        {
+            TotalRegistros = totalRegistros,
+            TotalPaginas = (int)Math.Ceiling(totalRegistros / (double)request.CantidadPorPagina),
+            Datos = lista  
+        };
     }
 
     public async Task<string> UpdateAsync(EditRequestDto request, string rolLogueado)
@@ -68,6 +99,21 @@ public class UserService : IUserService
         await _context.SaveChangesAsync();
 
         return "Usuario actualizado correctamente.";
+    }
+
+    public async Task<string> DeleteAsync(int id)
+    {
+        var usuario = await _context.Usuarios.FindAsync(id);
+
+        if ( usuario == null)
+        {
+            throw new ("El usuario no existe o se encuentra eliminado");
+        }
+
+        _context.Usuarios.Remove(usuario);
+        await _context.SaveChangesAsync();
+
+        return "El servicio eliminado correctamente";
     }
 }
 

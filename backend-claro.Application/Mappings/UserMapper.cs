@@ -12,7 +12,10 @@ public static class UserMapper
         {
             Id = u.Id,
             Email = u.Email,
-            Rol = u.Rol,
+            // Tabla Usuario - Perfil
+            NombreCompleto = u.Perfil.NombreCompleto, 
+            DocumentoIdentidad = u.Perfil.DocumentoIdentidad,
+            Rol = u.Rol.ToString(),
             FechaRegistro = u.FechaRegistro
         });
     }
