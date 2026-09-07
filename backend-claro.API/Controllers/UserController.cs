@@ -57,4 +57,18 @@ public class UserController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+    [Authorize(Roles = nameof(Rol.ADMIN))]
+    [HttpDelete ("{codigo}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        try
+        {
+            var resultado = await _userService.DeleteAsync(id);
+            return Ok(new { message = resultado});
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message});
+        }
+    }
 }
