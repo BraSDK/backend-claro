@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IUserService, UserService>(); 
         // 4. Inyeccion de IServiceService:
         services.AddScoped<IServiceService, ServiceService>(); 
+        services.AddScoped<IOrdenTrabajoService, OrdenTrabajoService>();
 
         // 5. Configuración JWT
         var jwtSettings = configuration.GetSection("JwtSettings");

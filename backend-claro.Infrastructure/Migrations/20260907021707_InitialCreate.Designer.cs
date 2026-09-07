@@ -12,7 +12,7 @@ using backend_claro.Infrastructure.Persistence;
 namespace backend_claro.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260831200242_InitialCreate")]
+    [Migration("20260907021707_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -164,12 +164,15 @@ namespace backend_claro.Infrastructure.Migrations
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<decimal>("Precio")
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Codigo");
+
+                    b.HasIndex("Nombre");
 
                     b.ToTable("Servicios");
                 });

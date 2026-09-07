@@ -10,7 +10,7 @@ public interface IApplicationDbContext
     DbSet<Servicio> Servicios { get; set; }
     DbSet<OrdenTrabajo> Ordenes {get; set;}
     DbSet<DetalleTrabajo> Detalles {get; set;}
-    DbSet<Servicio> Servicios {get; set;}
+
     DbSet<OrdenTrabajoArchivo> Archivos {get; set;}
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

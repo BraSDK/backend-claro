@@ -69,5 +69,42 @@ public class UserService : IUserService
 
         return "Usuario actualizado correctamente.";
     }
+
+    // Trae un usuario por su Id (a pesar del nombre "List", devuelve uno solo)
+    public async Task<UserResponseDto> ListAsync(int id)
+    {
+        var usuario = await _context.CuentaUsuarios
+            .Include(c => c.Perfil)
+            .Where(c => c.Id == id)
+            .Select(c => new UserResponseDto
+            {
+                Id = c.Id,
+                Email = c.Email,
+                Rol = c.Rol,
+                FechaRegistro = c.FechaRegistro,
+                NombreCompleto = c.Perfil.NombreCompleto,
+                DocumentoIdentidad = c.Perfil.DocumentoIdentidad
+            })
+            .FirstOrDefaultAsync();
+
+        if (usuario is null)
+            throw new KeyNotFoundException($"No existe el usuario con Id {id}.");
+
+        return usuario;
+    }
+
+    // Elimina la cuenta por Id (el Perfil se borra en cascada)
+    public async Task<string> DeleteAsync(int id)
+    {
+        var cuenta = await _context.CuentaUsuarios.FindAsync(id);
+
+        if (cuenta is null)
+            throw new KeyNotFoundException($"No existe el usuario con Id {id}.");
+
+        _context.CuentaUsuarios.Remove(cuenta);
+        await _context.SaveChangesAsync();
+
+        return "Usuario eliminado correctamente.";
+    }
 }
 

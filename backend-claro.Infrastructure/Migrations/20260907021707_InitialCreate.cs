@@ -33,7 +33,7 @@ namespace backend_claro.Infrastructure.Migrations
                 columns: table => new
                 {
                     Codigo = table.Column<int>(type: "integer", nullable: false),
-                    Nombre = table.Column<string>(type: "text", nullable: false),
+                    Nombre = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
                     Precio = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     Categoria = table.Column<int>(type: "integer", nullable: false),
                     FechaCreacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
@@ -165,6 +165,11 @@ namespace backend_claro.Infrastructure.Migrations
                 name: "IX_Ordenes_UsuarioId",
                 table: "Ordenes",
                 column: "UsuarioId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Servicios_Nombre",
+                table: "Servicios",
+                column: "Nombre");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Usuarios_AuthId",

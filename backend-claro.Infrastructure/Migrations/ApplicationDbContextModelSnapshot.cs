@@ -42,9 +42,8 @@ namespace backend_claro.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Rol")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Rol")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -52,6 +51,127 @@ namespace backend_claro.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("CuentaUsuarios");
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.DetalleTrabajo", b =>
+                {
+                    b.Property<int>("DetalleTrabajoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DetalleTrabajoId"));
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("OrdenTrabajoId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("PrecioTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ServicioId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.HasKey("DetalleTrabajoId");
+
+                    b.HasIndex("OrdenTrabajoId");
+
+                    b.HasIndex("ServicioId");
+
+                    b.ToTable("Detalles");
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.OrdenTrabajo", b =>
+                {
+                    b.Property<int>("OrdenTrabajoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("OrdenTrabajoId"));
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("PrecioTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Sot")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("OrdenTrabajoId");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("Ordenes");
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.OrdenTrabajoArchivo", b =>
+                {
+                    b.Property<int>("ArchivoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ArchivoId"));
+
+                    b.Property<string>("NombreArchivo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("OrdenTrabajoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Src")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("ArchivoId");
+
+                    b.HasIndex("OrdenTrabajoId");
+
+                    b.ToTable("Archivos");
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.Servicio", b =>
+                {
+                    b.Property<int>("Codigo")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Categoria")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<decimal>("Precio")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Codigo");
+
+                    b.HasIndex("Nombre");
+
+                    b.ToTable("Servicios");
                 });
 
             modelBuilder.Entity("backend_claro.Domain.Entities.Usuario", b =>
@@ -85,6 +205,47 @@ namespace backend_claro.Infrastructure.Migrations
                     b.ToTable("Usuarios");
                 });
 
+            modelBuilder.Entity("backend_claro.Domain.Entities.DetalleTrabajo", b =>
+                {
+                    b.HasOne("backend_claro.Domain.Entities.OrdenTrabajo", "OrdenTrabajo")
+                        .WithMany("Detalles")
+                        .HasForeignKey("OrdenTrabajoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend_claro.Domain.Entities.Servicio", "Servicio")
+                        .WithMany()
+                        .HasForeignKey("ServicioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OrdenTrabajo");
+
+                    b.Navigation("Servicio");
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.OrdenTrabajo", b =>
+                {
+                    b.HasOne("backend_claro.Domain.Entities.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.OrdenTrabajoArchivo", b =>
+                {
+                    b.HasOne("backend_claro.Domain.Entities.OrdenTrabajo", "OrdenT")
+                        .WithMany("Archivos")
+                        .HasForeignKey("OrdenTrabajoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OrdenT");
+                });
+
             modelBuilder.Entity("backend_claro.Domain.Entities.Usuario", b =>
                 {
                     b.HasOne("backend_claro.Domain.Entities.CuentaUsuario", "Cuenta")
@@ -100,6 +261,13 @@ namespace backend_claro.Infrastructure.Migrations
                 {
                     b.Navigation("Perfil")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.OrdenTrabajo", b =>
+                {
+                    b.Navigation("Archivos");
+
+                    b.Navigation("Detalles");
                 });
 #pragma warning restore 612, 618
         }
