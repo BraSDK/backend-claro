@@ -7,6 +7,7 @@ public interface IApplicationDbContext
 {
     DbSet<CuentaUsuario> CuentaUsuarios { get; set; }
     DbSet<Usuario> Usuarios { get; set; }
+    DbSet<Servicio> Servicios { get; set; }
     DbSet<OrdenTrabajo> Ordenes {get; set;}
     DbSet<DetalleTrabajo> Detalles {get; set;}
     DbSet<Servicio> Servicios {get; set;}

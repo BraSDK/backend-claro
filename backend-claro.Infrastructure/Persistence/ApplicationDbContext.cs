@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<DetalleTrabajo> Detalles { get; set; }
     public DbSet<Servicio> Servicios { get; set; }
     public DbSet<OrdenTrabajoArchivo> Archivos { get; set; }
+    public DbSet<Servicio> Servicios { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

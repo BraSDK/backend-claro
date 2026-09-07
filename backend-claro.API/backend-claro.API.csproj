@@ -23,4 +23,8 @@
     <ProjectReference Include="..\backend-claro.Infrastructure\backend-claro.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
 </Project>

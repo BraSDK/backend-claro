@@ -11,6 +11,7 @@ namespace backend_claro.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -23,6 +24,7 @@ public class AuthController : ControllerBase
 
     //[Authorize(Roles = nameof(Rol.ADMIN))]
     [HttpPost("register")]
+    [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
     {
         try
@@ -35,12 +37,13 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            // Si el correo ya existe, devolvemos un 400 Bad Request
-            return BadRequest(new { error = ex.Message });
+            var errorReal = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+            return BadRequest(new { error = errorReal });
         }
     }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         try

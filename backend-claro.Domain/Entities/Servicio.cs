@@ -16,7 +16,7 @@ public class Servicio
 
 
     [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)] //No es autoincrementable
     public int Codigo { get; set;} 
     public string Nombre {get; set;} = string.Empty;
 
@@ -26,5 +26,7 @@ public class Servicio
     public CategoriaServicio Categoria {get; set;} = CategoriaServicio.HFC;
 
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    
+    // public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
 
 }

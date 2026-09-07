@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend_claro.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using backend_claro.Infrastructure.Persistence;
 namespace backend_claro.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260903201432_AgregarTablaServicios")]
+    partial class AgregarTablaServicios
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,9 +45,8 @@ namespace backend_claro.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Rol")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Rol")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -52,6 +54,32 @@ namespace backend_claro.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("CuentaUsuarios");
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.Servicio", b =>
+                {
+                    b.Property<int>("Codigo")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Categoria")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<decimal>("Precio")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Codigo");
+
+                    b.HasIndex("Nombre");
+
+                    b.ToTable("Servicios");
                 });
 
             modelBuilder.Entity("backend_claro.Domain.Entities.Usuario", b =>
