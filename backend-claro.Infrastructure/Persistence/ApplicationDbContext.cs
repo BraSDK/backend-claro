@@ -11,7 +11,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     public DbSet<CuentaUsuario> CuentaUsuarios { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
+    public DbSet<OrdenTrabajo> Ordenes {get; set;}
+    public DbSet<DetalleTrabajo> Detalles { get; set; }
     public DbSet<Servicio> Servicios { get; set; }
+    public DbSet<OrdenTrabajoArchivo> Archivos { get; set; }
+    
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

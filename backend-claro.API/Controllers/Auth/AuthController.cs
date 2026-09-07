@@ -3,6 +3,7 @@ using backend_claro.Application.Interfaces;
 using backend_claro.Application.DTOs.Auth;
 using Microsoft.AspNetCore.Authorization;
 using backend_claro.Domain.Enums;
+using System.Security.Principal;
 
 namespace backend_claro.API.Controllers;
 
@@ -21,7 +22,7 @@ public class AuthController : ControllerBase
     }
 
 
-    [Authorize(Roles = nameof(Rol.ADMIN))]
+    //[Authorize(Roles = nameof(Rol.ADMIN))]
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
