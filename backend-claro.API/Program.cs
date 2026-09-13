@@ -12,13 +12,13 @@ builder.Services.AddCors(options =>
     {
         if (builder.Environment.IsDevelopment())
         {
-            policy.AllowAnyOrigin() // El puerto exacto de tu React
+            policy.AllowAnyOrigin() //=> permite calquier origen
               .AllowAnyHeader()
               .AllowAnyMethod();
         }
         else
         {
-            // En el servidor real
+            
             policy.WithOrigins("https://www.tudominio-claro.com")
                 .AllowAnyHeader()
                 .AllowAnyMethod();
@@ -32,7 +32,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerDocumentation();
 
 builder.Services.AddInfrastructureServices(builder.Configuration);
-
+/*
 builder.Services.AddCors(
     cors =>
     {
@@ -42,7 +42,7 @@ builder.Services.AddCors(
                         .AllowAnyHeader());
     }
 );
-
+*/
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -50,7 +50,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseCors("Politica_privada");
+//app.UseCors("Politica_privada");
 app.UseHttpsRedirection();
 
 // Aplicar la política de CORS
@@ -60,5 +60,18 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+Console.WriteLine("=== VALORES DE CONFIGURACIÓN CARGADOS ===");
+
+foreach (var kvp in app.Configuration.AsEnumerable())
+{
+    // Opcional: Filtramos valores nulos o vacíos de secciones secundarias para limpiar la pantalla
+    if (!string.IsNullOrEmpty(kvp.Value)) 
+    {
+        Console.WriteLine($"[Clave]: {kvp.Key}  -->  [Valor]: {kvp.Value}");
+    }
+}
+
+Console.WriteLine("=========================================");
 
 app.Run();
