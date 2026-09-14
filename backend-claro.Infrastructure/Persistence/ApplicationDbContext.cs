@@ -27,7 +27,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
             if (entry.State == EntityState.Added)
             {
-            
                 entry.Entity.FechaCreacion = DateTime.UtcNow;
                 entry.Entity.FechaActualizacion = DateTime.UtcNow;
             }else if(entry.State == EntityState.Modified){
