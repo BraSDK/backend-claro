@@ -24,7 +24,11 @@ public class OrdenTrabajoController : ControllerBase
     // GET Api/OrdenTrabajo
     [HttpGet]
     [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.TECNICO)},{nameof(Rol.ALMACEN)}")]
-    public async Task<IActionResult> Listar() => Ok(await _service.ListarAsync());
+    public async Task<IActionResult> Listar([FromQuery] ListRequestOrdenesDto request) {
+
+        return Ok(await _service.ListarAsync(request));
+        
+    }
 
     // GET Api/OrdenTrabajo/5
     [HttpGet("{id}")]
@@ -87,7 +91,7 @@ public class OrdenTrabajoController : ControllerBase
     {
         try
         {
-            await _service.EditarDetallesAsunc(id, detalles);
+            await _service.EditarDetallesAsync(id, detalles);
             return Ok();
         }
         catch (InvalidOperationException ex)

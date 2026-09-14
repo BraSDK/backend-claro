@@ -1,3 +1,4 @@
+using backend_claro.Application.DTOs;
 using backend_claro.Application.DTOs.OrdenTrabajo;
 using Microsoft.AspNetCore.Http;
 
@@ -6,7 +7,7 @@ namespace backend_claro.Application.Interfaces;
 public interface IOrdenTrabajoService
 {
     // ============ LECTURA ============
-    Task<List<OrdenListaResponse>> ListarAsync();
+    Task<PagedResponse<OrdenListaResponse>> ListarAsync(ListRequestOrdenesDto request);
     Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id);
     Task<OrdenDetalleResponse> ObtenerPorSotAsync(int sot);
 
@@ -16,7 +17,7 @@ public interface IOrdenTrabajoService
 
     // ============ DETALLES  ============
     Task<DetalleResponse> AgregarDetalleAsync(int ordenId, CrearDetalleRequest request);
-    Task EditarDetallesAsunc(int ordenId ,List<DetalleEditar> requestList);
+    Task EditarDetallesAsync(int ordenId ,List<DetalleEditar> requestList);
     Task EliminarDetalleAsync(int ordenId, int detalleId);
 
     // ============ ARCHIVOS ============

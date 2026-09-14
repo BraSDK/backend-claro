@@ -65,7 +65,6 @@ Console.WriteLine("=== VALORES DE CONFIGURACIÓN CARGADOS ===");
 
 foreach (var kvp in app.Configuration.AsEnumerable())
 {
-    // Opcional: Filtramos valores nulos o vacíos de secciones secundarias para limpiar la pantalla
     if (!string.IsNullOrEmpty(kvp.Value)) 
     {
         Console.WriteLine($"[Clave]: {kvp.Key}  -->  [Valor]: {kvp.Value}");

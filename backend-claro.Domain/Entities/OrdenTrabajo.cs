@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using backend_claro.Domain.Enums;
-
+using backend_claro.Domain.Interfaces;
 namespace backend_claro.Domain.Entities;
 
-public class OrdenTrabajo
+public class OrdenTrabajo : IAuditable
 {
     public int OrdenTrabajoId {get; set;}
 
@@ -18,7 +18,7 @@ public class OrdenTrabajo
     public Estados Estado {get; set;} = Estados.INGRESADA;
 
     public DateTime FechaCreacion {get; set;} = DateTime.UtcNow;
-
+    public DateTime FechaActualizacion {get; set;} = DateTime.UtcNow;
     //FK
     public int UsuarioId {get; set;}
     public Usuario Usuario {get; set;} = null!;

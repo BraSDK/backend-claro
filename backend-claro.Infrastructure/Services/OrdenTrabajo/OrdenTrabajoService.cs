@@ -5,12 +5,13 @@ using backend_claro.Domain.Entities;
 using System.Data.Common;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Http;
-using backend_claro.Application.DTOs;
-using backend_claro.Application;
 using backend_claro.Application.Mappings;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using System.IO.Compression;
+using backend_claro.Domain.Exceptions;
+using backend_claro.Domain.Enums;
+using backend_claro.Application.DTOs;
 namespace backend_claro.Infrastructure.Services;
 
 public class OrdenTrabajoService : IOrdenTrabajoService
@@ -26,44 +27,42 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         _storage = storage;
     }
 
-
-
-
-    public Task EliminarDetalleAsync(int ordenId, int detalleId)
+    public async Task EliminarDetalleAsync(int ordenId, int detalleId)
     {
-        var  ordenTrabajo =  _context.Ordenes.FirstOrDefault(o =>  o.OrdenTrabajoId == ordenId );
+        var  ordenTrabajo = await _context.Ordenes.Include( o => o.Detalles)
+                                                  .FirstOrDefaultAsync(o =>  o.OrdenTrabajoId == ordenId );
         if(ordenTrabajo is null)
         {
-            throw new InvalidOperationException(" Este detalle n puede ser elimnado");
+            throw new NotFoundException(" No existe orden de trabajo con tal detalle");
         }
-        var detalle = ordenTrabajo.Detalles.FirstOrDefault(a => a.DetalleTrabajoId == detalleId);
+        var detalle = ordenTrabajo.Detalles.FirstOrDefault(a => a.DetalleTrabajoId == detalleId) ?? throw new NotFoundException("No se pudo encontrar detalle a elmiminar");
+        
+        _context.Detalles.Remove(detalle);
+        
 
-        if(detalle is not null)
-        {
-             _context.Detalles.Remove(detalle);
-        }
-
-        _context.SaveChangesAsync();
-
-        return Task.CompletedTask;
-
+        await _context.SaveChangesAsync();
        
     }
 
-
-
-
-    public  Task<DetalleResponse> AgregarDetalleAsync(int ordenId, CrearDetalleRequest request)
+    public  async Task<DetalleResponse> AgregarDetalleAsync(int ordenId, CrearDetalleRequest request)
     {
-        var  ordenTrabajo =  _context.Ordenes.Find( ordenId ) ?? throw new InvalidOperationException("No se pudo encontrar orden de trabajao");
+        var  ordenTrabajo =await _context.Ordenes.Include( a => a.Detalles)
+                                                 .FirstOrDefaultAsync( o => o.OrdenTrabajoId == ordenId ) ?? throw new NotFoundException("No se pudo encontrar orden de trabajao");
         var detalleOrden = request.ToDetalleEntity();
-        var Servicio = _context.Servicios.FirstOrDefault(s => s.Codigo == detalleOrden.ServicioId);
+        var Servicio =await _context.Servicios.FirstOrDefaultAsync(s => s.Codigo == detalleOrden.ServicioCodigo);
+        /*
+        if(ordenTrabajo.Estado == Estados.LIQUIDADO)
+        {
+            throw new InvalidOperationException(" No se puede editar una orden de Trabajo liquidada");
+        }
+        */
 
         if(Servicio is null)
         {
-            throw new InvalidOperationException("El servicio no existe");            
+            throw new NotFoundException("El servicio no existe");            
         }
 
+        
         detalleOrden.PrecioTotal = Servicio.Precio * detalleOrden.Cantidad;
         
         ordenTrabajo.Detalles.Add(detalleOrden);
@@ -72,9 +71,9 @@ public class OrdenTrabajoService : IOrdenTrabajoService
 
         ordenTrabajo.PrecioTotal = Total;
 
-        _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
-        return Task.FromResult(detalleOrden.ToResponse());
+        return detalleOrden.ToResponse();
         
     }
 
@@ -188,29 +187,50 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         OrdenTrabajo.Archivos.Remove(ArchivoTrabajo);
                 
     }
-
-
-    // Retorna para tablas
-    public async Task<List<OrdenListaResponse>> ListarAsync()
+    public async Task<PagedResponse<OrdenListaResponse>> ListarAsync(ListRequestOrdenesDto request)
     {
-        var listaOrdenes = _context.Ordenes.AsNoTracking()
-                              .Select(a => new OrdenListaResponse
-                              {
-                                  OrdenId = a.OrdenTrabajoId,
-                                  Sot = a.Sot,
-                                  Descripcion = a.Descripcion,
-                                  Estado = a.Estado
-                              }).ToList();
+        var query = _context.Ordenes.AsNoTracking();
 
-        return listaOrdenes;
+        if (request.FechaCreacion == default) 
+        {
+            throw new InvalidOperationException("La fecha ingresada está vacía o es nula.");
+        }
+        
+        query = query.Where( o => o.FechaCreacion > request.FechaCreacion);
+        var totalRegistros  =await query.CountAsync();
+        if(totalRegistros == 0)
+        {
+            throw new NotFoundException("Sin registros encontrados");
+        }
+
+        var listaOrdenesOrden =await query.Skip((request.Pagina-1)*request.CanPagina)
+                                     .Take(request.CanPagina)
+                                     .Select(a => new OrdenListaResponse
+                                     {
+                                        OrdenId = a.OrdenTrabajoId,
+                                        Sot = a.Sot,
+                                        Descripcion = a.Descripcion,
+                                        Estado = a.Estado
+                                     }).ToListAsync();
+                                      
+        int registrosEnEstaPagina = listaOrdenesOrden.Count;                  
+
+        return new PagedResponse<OrdenListaResponse>
+        {
+            ListaOrdenes = listaOrdenesOrden,
+            TotalRegistros = totalRegistros,
+            TotalRegistrosPagina = registrosEnEstaPagina,
+            NumeroPagina = request.Pagina
+        };
     }
 
     public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id)
     {
         var OrdenDetalleRespuesta = await _context.Ordenes.AsNoTracking()
-                                                          .Include(a => a.Archivos)
-                                                          .Include(d => d.Detalles)
-                                                          .FirstOrDefaultAsync(a => a.OrdenTrabajoId == id);
+                                                          .Include(o => o.Archivos)
+                                                          .Include(o => o.Detalles)
+                                                          .FirstOrDefaultAsync(o => o.OrdenTrabajoId == id)
+                                                          ?? throw new NotFoundException($"No se encontro la orden {id}");
         if(OrdenDetalleRespuesta is null)
         {
             throw new KeyNotFoundException($"No se encontró la orden con ID {id}");
@@ -235,7 +255,7 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         return OrdenDetalleRespuesta.ToDetalleResponse();   
     }
 
-    public async Task EditarDetallesAsunc(int ordenId, List<DetalleEditar> requestList)
+    public async Task EditarDetallesAsync(int ordenId, List<DetalleEditar> requestList)
     {
         var ordenTrabajo = await _context.Ordenes.Include(a => a.Detalles)
                                            .FirstOrDefaultAsync(a => a.OrdenTrabajoId == ordenId) ?? throw new InvalidOperationException("No se pudo encontrar");
@@ -249,8 +269,8 @@ public class OrdenTrabajoService : IOrdenTrabajoService
             {
                 item.Cantidad = detalleTemp.Cantidad;
                 item.Tipo = detalleTemp.Tipo;
-                item.ServicioId = detalleTemp.ServicioId;
-                var ServicioConsulta = _context.Servicios.Find( detalleTemp.ServicioId) ?? throw new InvalidOperationException("No existe tal servicio");
+                item.ServicioCodigo = detalleTemp.ServicioCodigo;
+                var ServicioConsulta = _context.Servicios.Find( detalleTemp.ServicioCodigo) ?? throw new InvalidOperationException("No existe tal servicio");
                 item.PrecioTotal = item.Cantidad * ServicioConsulta.Precio;
 
             }

@@ -1,16 +1,15 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using backend_claro.Domain.Enums;
+using backend_claro.Domain.Interfaces;
 namespace backend_claro.Domain.Entities;
 
-public class DetalleTrabajo
+public class DetalleTrabajo:IAuditable
 {
     [Key]
     public int DetalleTrabajoId {get; set;}
 
-    public DateTime FechaCreacion {get; set;} = DateTime.UtcNow;
-
-    public int ServicioId {get;set;}
+    public int ServicioCodigo {get;set;}
     public Servicio Servicio {get; set; } = null!;
     public int Cantidad {get; set; } = 0;
 
@@ -22,4 +21,6 @@ public class DetalleTrabajo
 
 
     public TipoDetalle Tipo {get; set;} = TipoDetalle.DETALLE;
+    public DateTime FechaActualizacion { get ; set; } = DateTime.UtcNow;
+    public DateTime FechaCreacion {get; set;} = DateTime.UtcNow;
 }
