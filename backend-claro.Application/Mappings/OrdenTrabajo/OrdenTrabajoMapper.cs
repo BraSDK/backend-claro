@@ -1,6 +1,5 @@
 using backend_claro.Application.DTOs.OrdenTrabajo;
 using backend_claro.Domain.Entities;
-
 namespace backend_claro.Application.Mappings;
 
 public static class OrdenTrabajoMapper
@@ -52,7 +51,7 @@ public static class OrdenTrabajoMapper
         return new DetalleResponse
         {
             DetalleId = detalle.DetalleTrabajoId,
-            ServicioId = detalle.ServicioId,
+            ServicioId = detalle.ServicioCodigo,
             Cantidad = detalle.Cantidad,
             PrecioTotal = detalle.PrecioTotal,
             Tipo = detalle.Tipo
@@ -74,7 +73,7 @@ public static class OrdenTrabajoMapper
         return new DetalleTrabajo
         {
                
-            ServicioId = request.ServicioId,
+            ServicioCodigo = request.ServicioId,
             Cantidad = request.Cantidad, 
             Tipo = request.Tipo,
 

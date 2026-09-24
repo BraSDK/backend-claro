@@ -17,15 +17,23 @@ public class FileStorageService : IFileStorageService
 
 public async Task<string> EliminarArchivo(string src)
 {
+    
     string? rutaBase = _config["Storage:RutaBase"];
+    Console.WriteLine("========================\n"+ rutaBase + "\n==========================");
 
-    if (string.IsNullOrEmpty(rutaBase))
+    if (string.IsNullOrEmpty(rutaBase))  
     {
         throw new InvalidOperationException("La ruta base no está configurada.");
     }
-
+    //el combine evita la ruta raiz al estar con un slash antes asi que volaréel slash
+    if (src.StartsWith("/"))
+    {
+        src = src.Substring(1);
+    } 
+    
     string rutaFisica = Path.GetFullPath(Path.Combine(rutaBase, src));
-
+    Console.WriteLine("========================\n"+ rutaFisica + "\n==========================");
+ 
     if (!rutaFisica.StartsWith(Path.GetFullPath(rutaBase), StringComparison.OrdinalIgnoreCase))
     {
         throw new UnauthorizedAccessException("Acceso denegado a la ruta especificada.");
@@ -33,6 +41,7 @@ public async Task<string> EliminarArchivo(string src)
 
     if (File.Exists(rutaFisica))
     {
+        Console.WriteLine(rutaFisica);
         File.Delete(rutaFisica);
     }
 
@@ -43,7 +52,7 @@ public async Task<string> EliminarArchivo(string src)
     async Task<string> IFileStorageService.GestionarArchivo(IFormFile archivo, string src)
     {
 
-        if(archivo is null || archivo.Length < 0)
+        if(archivo is null || archivo.Length < 1)
         {
             throw new ArgumentException("El archivo está vacío.", nameof(archivo));
         }
@@ -71,7 +80,7 @@ public async Task<string> EliminarArchivo(string src)
         await using var stream = new FileStream(rutaCompleta, FileMode.Create);
         await archivo.CopyToAsync(stream);
 
-        return Path.Combine(src, rutaCompleta).Replace("\\","/");
+       return $"/{src}/{nuevoNombre}".Replace("\\", "/");
 
     }
 }

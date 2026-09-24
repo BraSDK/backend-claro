@@ -62,7 +62,6 @@ public class AuthService : IAuthService
         {
             throw new Exception("Credenciales incorrectas.");
         }
-
         // 3. Por ahora devolvemos un texto simulado. En el próximo paso generaremos el Token Real.
         return GenerarTokenJwt(cuenta);
     }
@@ -80,7 +79,7 @@ public class AuthService : IAuthService
         {
             new Claim(JwtRegisteredClaimNames.Sub, cuenta.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, cuenta.Email),
-            new Claim(ClaimTypes.Role, cuenta.Rol.ToString()), //Guardamos el rol para futuras validaciones
+            new Claim(ClaimTypes.Role, cuenta.Rol.ToString()), 
         };
 
         // Configurar los detalles del token (firma, expiracion, etc.)

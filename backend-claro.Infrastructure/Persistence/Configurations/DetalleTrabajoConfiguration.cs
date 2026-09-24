@@ -10,7 +10,7 @@ public class DetalleTrabajoConfiguration : IEntityTypeConfiguration<DetalleTraba
     {
         builder.HasOne(d => d.Servicio)
                   .WithMany()
-                  .HasForeignKey(d => d.ServicioId)
+                  .HasForeignKey(d => d.ServicioCodigo)
                   .HasPrincipalKey(s => s.Codigo)   
                   .OnDelete(DeleteBehavior.Restrict);
     }

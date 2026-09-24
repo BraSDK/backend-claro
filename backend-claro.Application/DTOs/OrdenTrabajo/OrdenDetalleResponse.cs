@@ -7,6 +7,7 @@ public class OrdenDetalleResponse
     public int OrdenId { get; set; }
     public int Sot { get; set; }
     public string Descripcion { get; set; } = string.Empty;
+    public int? UsuarioId {get; set;}
     public Estados Estado { get; set; }
     public decimal? PrecioTotal { get; set; }
     public List<DetalleResponse> Detalles { get; set; } = new();

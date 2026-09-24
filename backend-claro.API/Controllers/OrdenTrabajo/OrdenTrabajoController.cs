@@ -2,13 +2,16 @@ using backend_claro.Application.DTOs.OrdenTrabajo;
 using backend_claro.Application.Interfaces;
 using backend_claro.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
+using backend_claro.Api.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Reflection;
 
 namespace backend_claro.API.Controllers;
 
 [ApiController]
-[Route("Api/[controller]")]
+[Route("api/[controller]")]
 [Authorize]
 public class OrdenTrabajoController : ControllerBase
 {
@@ -22,7 +25,7 @@ public class OrdenTrabajoController : ControllerBase
     // ============ LECTURA ============
 
     // GET Api/OrdenTrabajo
-    [HttpGet]
+    [HttpGet("List")]
     [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.TECNICO)},{nameof(Rol.ALMACEN)}")]
     public async Task<IActionResult> Listar([FromQuery] ListRequestOrdenesDto request) {
 
@@ -35,8 +38,9 @@ public class OrdenTrabajoController : ControllerBase
     public async Task<IActionResult> ObtenerPorId(int id)
     {
         try
-        {
-            return Ok(await _service.ObtenerPorIdAsync(id));
+        {   
+            var UsuarioRol = User.ObtenerRol(); //herencia de controller base, User es un Http.contextUser
+            return Ok(await _service.ObtenerPorIdAsync(id,UsuarioRol));
         }
         catch (KeyNotFoundException ex)
         {
@@ -59,18 +63,58 @@ public class OrdenTrabajoController : ControllerBase
     [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.TECNICO)}")]
     public async Task<IActionResult> Crear([FromForm] CrearOrdenRequest request)
     {
+        Console.WriteLine(request.GetType());
+        PropertyInfo[] peticion = request.GetType().GetProperties();
+        foreach (var item in peticion)
+        {
+                string nombre = item.Name;
+                object valor = item.GetValue(request,null);
+                Console.WriteLine($"{nombre}: {valor}");
+        }
         try { return Ok(await _service.CrearAsync(request)); }
         catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
     }
-
-    // PUT Api/OrdenTrabajo/5   
-    [HttpPut("{id}")]
-    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.TECNICO)}")]
-    public async Task<IActionResult> Editar(int id, [FromBody] EditarOrdenRequest request)
+    //Delete Orden trabajo general
+    //DELETE api/OrdenTrabajo/5/delete
+    [HttpDelete("{id}/delete")]
+    [Authorize] //cualquier usuario autenticado
+    public async Task<IActionResult> EliminarOrden (int id)
     {
+
+        try{
+            // Opcional: Si necesitas extraer el Id del usuario autenticado desde el Token JWT
+            // var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            // Llamamos al servicio que maneja la lógica
+            await _service.EliminarOrdenAsync(id);
+
+            // 204 No Content es el estándar profesional para un DELETE exitoso
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            //_logger.LogError(ex, "Error al intentar eliminar la orden {Id}", id);
+            return StatusCode(500, new { mensaje = "Error interno del servidor al eliminar la orden." });
+        }
+    }
+
+    // PUT api/OrdenTrabajo/5/tecnico   
+    [HttpPut("{id}/tecnico")]
+    [Authorize(Roles = $"{nameof(Rol.TECNICO)}")]
+    public async Task<IActionResult> EditarByTecnico(int id, [FromForm] EditarOrdenRequest request)
+    {   
+        Console.WriteLine(request.GetType());
+        PropertyInfo[] peticion = request.GetType().GetProperties();
+        foreach (var item in peticion)
+        {
+                string nombre = item.Name;
+                object valor = item.GetValue(request,null);
+                Console.WriteLine($"{nombre}: {valor}");
+        }
+
         try
         {
-            return Ok(await _service.EditarAsync(id, request));
+            return Ok(await _service.EditarOrdenByTecnicoAsync(id, request));
         }
         catch (KeyNotFoundException ex)
         {
@@ -78,6 +122,7 @@ public class OrdenTrabajoController : ControllerBase
         }
         catch (Exception ex)
         {
+            
             return BadRequest(new { error = ex.Message });
         }
     }
