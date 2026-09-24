@@ -2,16 +2,11 @@ using backend_claro.Application.DTOs.OrdenTrabajo;
 using backend_claro.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using backend_claro.Domain.Entities;
-using System.Data.Common;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Http;
 using backend_claro.Application.Mappings;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using System.IO.Compression;
 using backend_claro.Domain.Exceptions;
-using backend_claro.Domain.Enums;
 using backend_claro.Application.DTOs;
+using backend_claro.Domain.Enums;
 namespace backend_claro.Infrastructure.Services;
 
 public class OrdenTrabajoService : IOrdenTrabajoService
@@ -112,20 +107,48 @@ public class OrdenTrabajoService : IOrdenTrabajoService
 
         return OrdenTrabajoEntity.ToResponse();
     }
-    public async Task<OrdenDetalleResponse> EditarAsync(int ordenId, EditarOrdenRequest request)
+    public async Task<OrdenDetalleResponse> EditarOrdenByTecnicoAsync(int ordenId, EditarOrdenRequest request)
     {
         //por si acaso
-        var OrdenTrabajo = await _context.Ordenes.FirstOrDefaultAsync(a => a.OrdenTrabajoId == ordenId);
-        if(OrdenTrabajo is null)
+        var OrdenTrabajo = await _context.Ordenes.Include( o => o.Archivos)
+                                                 .FirstOrDefaultAsync(a => a.OrdenTrabajoId == ordenId)??
+                                                  throw new NotFoundException($"Orden {ordenId} no encontrada");
+        if (request.Descripcion is not null)OrdenTrabajo.Descripcion = request.Descripcion;
+        if (request.Sot.HasValue) OrdenTrabajo.Sot = request.Sot.Value;
+        var rutasABorrar = new List<string>();
+        if(request.ArchivosEliminados is { Count: > 0})
         {
-            throw new KeyNotFoundException("No se encontraron órdenes de trabajo ára editar.");
+                foreach (var archivoId in request.ArchivosEliminados)
+                {
+                    var archivo = OrdenTrabajo.Archivos.FirstOrDefault(a => a.ArchivoId == archivoId)
+                        ?? throw new NotFoundException($"Archivo {archivoId} no pertenece a esta orden");
+
+                    rutasABorrar.Add(archivo.Src);
+                    OrdenTrabajo.Archivos.Remove(archivo);
+                    _context.Archivos.Remove(archivo);
+                }
         }
-        OrdenTrabajo.Descripcion = request.Descripcion;
-        OrdenTrabajo.Estado = request.Estado;
-        OrdenTrabajo.Sot = request.Sot;
+
         
-        var OrdenTrabajoActualizada = _context.Ordenes.Update(OrdenTrabajo);
-        var rows = _context.SaveChangesAsync();
+        if (request.ArchivosNuevos is { Count: > 0 })
+        {
+            foreach (var archivo in request.ArchivosNuevos)
+            {
+                if (archivo.Length == 0) continue;
+
+                var url = await _storage.GestionarArchivo(archivo,"ordenes");
+                OrdenTrabajo.Archivos.Add(new OrdenTrabajoArchivo
+                {
+                    NombreArchivo = archivo.FileName,
+                    Src = url,
+                    OrdenTrabajoId = ordenId
+                });
+            }
+        }
+        await _context.SaveChangesAsync();
+
+        foreach (var ruta in rutasABorrar)
+            await _storage.EliminarArchivo(ruta);
 
         return OrdenTrabajo.ToDetalleResponse();
 
@@ -193,10 +216,14 @@ public class OrdenTrabajoService : IOrdenTrabajoService
 
         if (request.FechaCreacion == default) 
         {
-            throw new InvalidOperationException("La fecha ingresada está vacía o es nula.");
+          query = query.Where( o => o.FechaCreacion > request.FechaCreacion);
+        }
+        else
+        {
+            query = query.Where( o => o.FechaCreacion > request.FechaCreacion);
         }
         
-        query = query.Where( o => o.FechaCreacion > request.FechaCreacion);
+
         var totalRegistros  =await query.CountAsync();
         if(totalRegistros == 0)
         {
@@ -224,21 +251,31 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         };
     }
 
-    public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id)
-    {
-        var OrdenDetalleRespuesta = await _context.Ordenes.AsNoTracking()
-                                                          .Include(o => o.Archivos)
-                                                          .Include(o => o.Detalles)
-                                                          .FirstOrDefaultAsync(o => o.OrdenTrabajoId == id)
-                                                          ?? throw new NotFoundException($"No se encontro la orden {id}");
-        if(OrdenDetalleRespuesta is null)
-        {
-            throw new KeyNotFoundException($"No se encontró la orden con ID {id}");
-        }
+public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario)
+{
+    var orden = await _context.Ordenes
+        .AsNoTracking()
+        .Include(o => o.Archivos)
+        .Include(o => o.Detalles)
+        .FirstOrDefaultAsync(o => o.OrdenTrabajoId == id)
+        ?? throw new NotFoundException($"No se encontró la orden {id}");
 
-        return OrdenDetalleRespuesta.ToDetalleResponse();                 
-                                                          
+    if (rolUsuario == Rol.TECNICO)
+    {
+        return new OrdenDetalleResponse
+        {
+            OrdenId = orden.OrdenTrabajoId,
+            UsuarioId = orden.UsuarioId,
+            Sot = orden.Sot,
+            Descripcion = orden.Descripcion,
+            Estado = orden.Estado,
+            Imagenes = orden.Archivos.Select(MapearArchivo).ToList(),
+            // Detalles y PrecioTotal quedan vacíos/default — el Técnico no los ve
+        };
     }
+
+    return orden.ToDetalleResponse(); // Admin/Almacén ven todo, tu extensión completa
+}
 
 
     public async Task<OrdenDetalleResponse> ObtenerPorSotAsync(int sot)
@@ -267,9 +304,9 @@ public class OrdenTrabajoService : IOrdenTrabajoService
             var detalleTemp = requestList.Find(a => a.DetalleId == item.DetalleTrabajoId);
             if (detalleTemp is not null)
             {
-                item.Cantidad = detalleTemp.Cantidad;
-                item.Tipo = detalleTemp.Tipo;
-                item.ServicioCodigo = detalleTemp.ServicioCodigo;
+                item.Cantidad = detalleTemp.Cantidad ?? item.Cantidad;
+                item.Tipo = detalleTemp.Tipo ?? item.Tipo;
+                item.ServicioCodigo = detalleTemp.ServicioCodigo ?? item.ServicioCodigo;
                 var ServicioConsulta = _context.Servicios.Find( detalleTemp.ServicioCodigo) ?? throw new InvalidOperationException("No existe tal servicio");
                 item.PrecioTotal = item.Cantidad * ServicioConsulta.Precio;
 
@@ -286,4 +323,113 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         
     }
 
+    public async Task EliminarOrdenAsync(int ordenId)
+    {
+        var ordenTrabajo = await _context.Ordenes.Include( o => o.Archivos)
+            .FirstOrDefaultAsync(o => o.OrdenTrabajoId == ordenId)
+            ?? throw new NotFoundException("Orden de trabajo no encontrada");   
+        Console.WriteLine(ordenTrabajo.Archivos + "Eliminado");
+        foreach (var item in ordenTrabajo.Archivos)
+        {
+           Console.WriteLine(item.Src + "Eliminado");
+           await _storage.EliminarArchivo(item.Src);
+        }
+        _context.Ordenes.Remove(ordenTrabajo);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<OrdenDetalleResponse> EditarCompletoAsync(int ordenId, EditarOrdenCompletaRequest request, Rol rolUsuario)
+    {
+
+                var orden = await _context.Ordenes
+                                        .Include(o => o.Detalles)
+                                            .ThenInclude(d => d.Servicio)
+                                        .Include(o => o.Archivos)
+                                        .FirstOrDefaultAsync(o => o.OrdenTrabajoId == ordenId)
+                                        ?? throw new NotFoundException($"Orden {ordenId} no encontrada");
+
+                if (request.Sot.HasValue) orden.Sot = request.Sot.Value;
+                if (request.Descripcion is not null) orden.Descripcion = request.Descripcion;
+                if (request.Estado.HasValue) orden.Estado = request.Estado.Value;
+                var tocaDetalles = request.DetallesNuevos.Any()
+                    || request.DetallesEditados.Any()
+                    || request.DetallesEliminados.Any();
+
+                foreach (var detalleId in request.DetallesEliminados)
+                {
+                    var detalle = orden.Detalles.FirstOrDefault(d => d.DetalleTrabajoId == detalleId)
+                        ?? throw new NotFoundException($"Detalle {detalleId} no pertenece a esta orden");
+
+                    orden.Detalles.Remove(detalle);
+                    _context.Detalles.Remove(detalle);
+                }
+                //detalles ditados
+                foreach (var cambio in request.DetallesEditados)
+                {
+                    var detalle = orden.Detalles.FirstOrDefault(d => d.DetalleTrabajoId == cambio.DetalleId)
+                        ?? throw new NotFoundException($"Detalle {cambio.DetalleId} no pertenece a esta orden");
+
+                    var huboCambioDeServicio = cambio.ServicioCodigo.HasValue && cambio.ServicioCodigo.Value != detalle.ServicioCodigo;
+                    var huboCambioDeCantidad = cambio.Cantidad.HasValue && cambio.Cantidad.Value != detalle.Cantidad;
+
+                    if (huboCambioDeServicio)
+                    {
+                        var nuevoServicio = await _context.Servicios.FindAsync(cambio.ServicioCodigo!.Value)
+                            ?? throw new NotFoundException($"Servicio {cambio.ServicioCodigo} no encontrado");
+
+                        detalle.ServicioCodigo = nuevoServicio.Codigo;
+                        detalle.Servicio = nuevoServicio;
+                    }
+
+                    if (cambio.Cantidad.HasValue) detalle.Cantidad = cambio.Cantidad.Value;
+                    if (cambio.Tipo.HasValue) detalle.Tipo = cambio.Tipo.Value;
+
+                    if (huboCambioDeServicio || huboCambioDeCantidad)
+                        detalle.PrecioTotal = detalle.Servicio.Precio * detalle.Cantidad;
+
+                    detalle.FechaActualizacion = DateTime.UtcNow;
+                }
+
+                // ===== Detalles nuevos =====
+                foreach (var nuevo in request.DetallesNuevos)
+                {
+                    var servicio = await _context.Servicios.FindAsync(nuevo.ServicioId)
+                        ?? throw new NotFoundException($"Servicio {nuevo.ServicioId} no encontrado");
+
+                    orden.Detalles.Add(new DetalleTrabajo
+                    {
+                        ServicioCodigo = servicio.Codigo,
+                        Servicio = servicio,
+                        Cantidad = nuevo.Cantidad,
+                        PrecioTotal = servicio.Precio * nuevo.Cantidad,
+                        Tipo = nuevo.Tipo,
+                        OrdenTrabajoId = ordenId
+                    });
+                }
+
+                // ===== Archivos eliminados =====
+                foreach (var archivoId in request.ArchivosEliminados)
+                {
+                    var archivo = orden.Archivos.FirstOrDefault(a => a.ArchivoId == archivoId)
+                        ?? throw new NotFoundException($"Archivo {archivoId} no pertenece a esta orden");
+
+                    await _storage.EliminarArchivo(archivo.Src);
+                    orden.Archivos.Remove(archivo);
+                    _context.Archivos.Remove(archivo);
+                }
+
+                orden.PrecioTotal = _context.Detalles.Sum( o => o.PrecioTotal);
+                orden.FechaActualizacion = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return orden.ToDetalleResponse();
+
+    }
+
+    private static ArchivoResponse MapearArchivo(OrdenTrabajoArchivo archivo) => new()
+    {
+        ArchivoId = archivo.ArchivoId,
+        NombreArchivo = archivo.NombreArchivo,
+        Src = archivo.Src
+    };
 }

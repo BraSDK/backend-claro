@@ -1,5 +1,6 @@
 using backend_claro.Infrastructure;
 using backend_claro.API.Extensions;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,6 +53,12 @@ if (app.Environment.IsDevelopment())
 }
 //app.UseCors("Politica_privada");
 app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(@"C:\uploads"),
+    RequestPath = "" // vacío porque tu Src ya guarda "/ordenes/archivo.jpg" completo
+});
+
 
 // Aplicar la política de CORS
 app.UseCors("PermitirFrontend");
@@ -70,6 +77,9 @@ foreach (var kvp in app.Configuration.AsEnumerable())
         Console.WriteLine($"[Clave]: {kvp.Key}  -->  [Valor]: {kvp.Value}");
     }
 }
+
+
+
 
 Console.WriteLine("=========================================");
 

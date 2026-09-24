@@ -50,6 +50,7 @@ public class AuthController : ControllerBase
         {
             // En este punto, devuelve nuestro string simulado (pronto será el JWT real)
             var token = await _authService.LoginAsync(request);
+
             
             return Ok(new { token = token });
         }
