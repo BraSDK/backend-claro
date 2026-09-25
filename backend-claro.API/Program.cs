@@ -4,7 +4,12 @@ using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        {
+            // Esto le enseña a .NET a leer Enums como textos ("HFC", "FTH") en lugar de números
+            options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        });
 
 // Configuración de CORS
 builder.Services.AddCors(options =>
