@@ -66,6 +66,41 @@ public class AuthService : IAuthService
         return GenerarTokenJwt(cuenta);
     }
 
+    public async Task<PerfilResponseDto> ObtenerPerfilAsync(int cuentaId)
+    {
+        var cuenta = await _context.CuentaUsuarios
+            .AsNoTracking()
+            .Include(c => c.Perfil)
+            .FirstOrDefaultAsync(c => c.Id == cuentaId)
+            ?? throw new KeyNotFoundException("No se encontró la cuenta");
+
+        return new PerfilResponseDto
+        {
+            CuentaId = cuenta.Id,
+            UsuarioId = cuenta.Perfil?.Id,
+            Email = cuenta.Email,
+            NombreCompleto = cuenta.Perfil?.NombreCompleto ?? string.Empty,
+            DocumentoIdentidad = cuenta.Perfil?.DocumentoIdentidad ?? string.Empty,
+            Rol = cuenta.Rol.ToString(),
+            FechaRegistro = cuenta.FechaRegistro,
+        };
+    }
+
+    public async Task CambiarPasswordAsync(int cuentaId, CambiarPasswordRequestDto request)
+    {
+        if (string.IsNullOrWhiteSpace(request.PasswordNueva) || request.PasswordNueva.Length < 8)
+            throw new InvalidOperationException("La nueva contraseña debe tener al menos 8 caracteres.");
+
+        var cuenta = await _context.CuentaUsuarios.FirstOrDefaultAsync(c => c.Id == cuentaId)
+            ?? throw new KeyNotFoundException("No se encontró la cuenta");
+
+        if (!BCrypt.Net.BCrypt.Verify(request.PasswordActual, cuenta.PasswordHash))
+            throw new InvalidOperationException("La contraseña actual no es correcta.");
+
+        cuenta.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.PasswordNueva);
+        await _context.SaveChangesAsync();
+    }
+
     // Metodo provado para fabricar el Token
     private string GenerarTokenJwt(CuentaUsuario cuenta)
     {

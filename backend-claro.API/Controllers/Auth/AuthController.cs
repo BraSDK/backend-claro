@@ -4,6 +4,7 @@ using backend_claro.Application.DTOs.Auth;
 using Microsoft.AspNetCore.Authorization;
 using backend_claro.Domain.Enums;
 using System.Security.Principal;
+using backend_claro.Api.Extensions;
 
 namespace backend_claro.API.Controllers;
 
@@ -59,5 +60,26 @@ public class AuthController : ControllerBase
             // Si la contraseña falla, devolvemos un 401 No Autorizado
             return Unauthorized(new { error = ex.Message });
         }
+    }
+
+    // GET api/Auth/me   -> datos del usuario autenticado
+    [HttpGet("me")]
+    public async Task<IActionResult> Me()
+    {
+        try { return Ok(await _authService.ObtenerPerfilAsync(User.ObtenerUsuarioId())); }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+    }
+
+    // PUT api/Auth/cambiar-password
+    [HttpPut("cambiar-password")]
+    public async Task<IActionResult> CambiarPassword([FromBody] CambiarPasswordRequestDto request)
+    {
+        try
+        {
+            await _authService.CambiarPasswordAsync(User.ObtenerUsuarioId(), request);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
     }
 }

@@ -6,4 +6,6 @@ public interface IAuthService
 {
     Task<string> RegisterAsync(RegisterRequestDto request);
     Task<string> LoginAsync(LoginRequestDto resquest);
+    Task<PerfilResponseDto> ObtenerPerfilAsync(int cuentaId);
+    Task CambiarPasswordAsync(int cuentaId, CambiarPasswordRequestDto request);
 }

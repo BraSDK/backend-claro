@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend_claro.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using backend_claro.Infrastructure.Persistence;
 namespace backend_claro.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261001023130_AuditoriaYConciliacion")]
+    partial class AuditoriaYConciliacion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -112,9 +115,6 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<int>("Estado")
                         .HasColumnType("integer");
 
-                    b.Property<int>("EstadoPago")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("FechaActualizacion")
                         .HasColumnType("timestamp with time zone");
 
@@ -130,13 +130,7 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<bool>("MarcadaApelacion")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("MotivoNoPago")
-                        .HasColumnType("text");
-
                     b.Property<string>("ObservacionAuditoria")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ObservacionPago")
                         .HasColumnType("text");
 
                     b.Property<decimal?>("PrecioTotal")
@@ -152,8 +146,6 @@ namespace backend_claro.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("OrdenTrabajoId");
-
-                    b.HasIndex("Sot");
 
                     b.HasIndex("UsuarioId");
 

@@ -3,5 +3,7 @@ public enum TipoDetalle
 {
     SERVICIO = 0,
     DETALLE = 1,
-    DROP = 2,
+    DROP150 = 2,
+    DROP200 = 3,
+    DROP300 = 4
 }

@@ -29,7 +29,7 @@ public class OrdenTrabajoController : ControllerBase
     [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.TECNICO)},{nameof(Rol.ALMACEN)}")]
     public async Task<IActionResult> Listar([FromQuery] ListRequestOrdenesDto request) {
 
-        return Ok(await _service.ListarAsync(request));
+        return Ok(await _service.ListarAsync(request, User.ObtenerRol(), User.ObtenerUsuarioId()));
         
     }
 
@@ -190,4 +190,90 @@ public class OrdenTrabajoController : ControllerBase
         try { await _service.EliminarArchivoAsync(id, archivoId); return NoContent(); }
         catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
     }
+
+
+    //Editar orden completa
+     // PUT api/OrdenTrabajo/5/EditarOrdenCompleta 
+    [HttpPut("{id}/EditarOrdenCompleta")]
+    [Authorize]
+    public async Task<IActionResult> EditarOrdenCompleta(int id,[FromForm] EditarOrdenCompletaRequest request)
+    {
+        Console.WriteLine("===============================\n");
+        Console.WriteLine(id);
+        Console.WriteLine("===============================\n");
+        Console.WriteLine(request.Descripcion);
+        Console.WriteLine(request.Estado);
+        request.DetallesEliminados.ForEach((id) =>
+        {
+            Console.WriteLine(id);
+        });
+        Console.WriteLine("===============================\n");
+        var rolUsuario = User.ObtenerRol();
+        try
+        {
+            await _service.EditarCompletoAsync(id, request,rolUsuario);
+            return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    // ============ AUDITORÍA ============
+
+    // PUT api/OrdenTrabajo/5/auditar   -> descuento / multa y su observación
+    [HttpPut("{id}/auditar")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> Auditar(int id, [FromBody] AuditarOrdenRequest request)
+    {
+        try { return Ok(await _service.AuditarAsync(id, request, User.ObtenerUsuarioId())); }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
+    // PATCH api/OrdenTrabajo/5/auditoria-pago   { estadoPago, motivoNoPago, observacionPago }
+    [HttpPatch("{id}/auditoria-pago")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> AuditarPago(int id, [FromBody] AuditoriaPagoRequest request)
+    {
+        try { return Ok(await _service.AuditarPagoAsync(id, request, User.ObtenerUsuarioId())); }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    // PUT api/OrdenTrabajo/auditar-masivo   -> audita sin descuento las SOT pendientes (seleccionadas o todas las del filtro)
+    [HttpPut("auditar-masivo")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> AuditarMasivo([FromBody] AuditarMasivoRequest request)
+    {
+        return Ok(await _service.AuditarMasivoAsync(request, User.ObtenerUsuarioId()));
+    }
+
+    // ============ CARGA MASIVA ============
+
+    // POST api/OrdenTrabajo/importar-excel   (multipart/form-data, campo "archivo")
+    // Lee el Excel procesado y crea las SOT con sus detalles. El archivo no se guarda.
+    [HttpPost("importar-excel")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<IActionResult> ImportarExcel(IFormFile archivo, [FromServices] IImportarOrdenesService importador)
+    {
+        if (archivo is null || archivo.Length == 0)
+            return BadRequest(new { error = "No se recibió ningún archivo" });
+
+        if (!Path.GetExtension(archivo.FileName).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "El archivo debe ser un Excel .xlsx" });
+
+        try
+        {
+            await using var stream = archivo.OpenReadStream();
+            return Ok(await importador.ImportarExcelAsync(stream));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
 }

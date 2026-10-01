@@ -487,3 +487,5 @@ $RECYCLE.BIN/
 appsettings.Development.json
 appsettings.json
 appsettings.*.json
+# credenciales de usuarios de prueba (no subir)
+*.local.json

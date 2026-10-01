@@ -20,6 +20,9 @@ public class OrdenTrabajoConfiguration : IEntityTypeConfiguration<OrdenTrabajo>
                   .HasForeignKey(d => d.OrdenTrabajoId)  
                   .OnDelete(DeleteBehavior.Cascade);
 
+            // se busca y se cruza mucho por SOT (listado, conciliación, importación)
+            builder.HasIndex(o => o.Sot);
+
             builder.HasMany( a => a.Archivos)
                   .WithOne(d => d.OrdenT)
                   .HasForeignKey(d => d.OrdenTrabajoId)

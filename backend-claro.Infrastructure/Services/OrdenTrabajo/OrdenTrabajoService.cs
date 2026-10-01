@@ -33,7 +33,7 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         var detalle = ordenTrabajo.Detalles.FirstOrDefault(a => a.DetalleTrabajoId == detalleId) ?? throw new NotFoundException("No se pudo encontrar detalle a elmiminar");
         
         _context.Detalles.Remove(detalle);
-        
+        ordenTrabajo.MarcarEditada();
 
         await _context.SaveChangesAsync();
        
@@ -65,6 +65,7 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         decimal Total = ordenTrabajo.Detalles.Sum( a => a.PrecioTotal );
 
         ordenTrabajo.PrecioTotal = Total;
+        ordenTrabajo.MarcarEditada();
 
         await _context.SaveChangesAsync();
 
@@ -145,6 +146,7 @@ public class OrdenTrabajoService : IOrdenTrabajoService
                 });
             }
         }
+        OrdenTrabajo.MarcarEditada();
         await _context.SaveChangesAsync();
 
         foreach (var ruta in rutasABorrar)
@@ -174,6 +176,7 @@ public class OrdenTrabajoService : IOrdenTrabajoService
 
         }
 
+        OrdenTrabajoEntity.MarcarEditada();
         await _context.SaveChangesAsync();
         var resultado = OrdenTrabajoEntity.Archivos.Select(a => new ArchivoResponse
         {
@@ -208,47 +211,184 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         _context.Archivos.Remove(ArchivoTrabajo);
 
         OrdenTrabajo.Archivos.Remove(ArchivoTrabajo);
-                
+        OrdenTrabajo.MarcarEditada();
+
+        await _context.SaveChangesAsync();
     }
-    public async Task<PagedResponse<OrdenListaResponse>> ListarAsync(ListRequestOrdenesDto request)
+    public async Task<PagedResponse<OrdenListaResponse>> ListarAsync(ListRequestOrdenesDto request, Rol rolUsuario, int cuentaId)
     {
         var query = _context.Ordenes.AsNoTracking();
 
-        if (request.FechaCreacion == default) 
+        // Un técnico solo ve sus propias órdenes (su Usuario se ubica por la cuenta del token)
+        if (rolUsuario == Rol.TECNICO)
         {
-          query = query.Where( o => o.FechaCreacion > request.FechaCreacion);
-        }
-        else
-        {
-            query = query.Where( o => o.FechaCreacion > request.FechaCreacion);
-        }
-        
-
-        var totalRegistros  =await query.CountAsync();
-        if(totalRegistros == 0)
-        {
-            throw new NotFoundException("Sin registros encontrados");
+            var usuarioId = await _context.Usuarios
+                .Where(u => u.AuthId == cuentaId)
+                .Select(u => (int?)u.Id)
+                .FirstOrDefaultAsync();
+            query = query.Where(o => o.UsuarioId == usuarioId);
         }
 
-        var listaOrdenesOrden =await query.Skip((request.Pagina-1)*request.CanPagina)
-                                     .Take(request.CanPagina)
-                                     .Select(a => new OrdenListaResponse
-                                     {
-                                        OrdenId = a.OrdenTrabajoId,
-                                        Sot = a.Sot,
-                                        Descripcion = a.Descripcion,
-                                        Estado = a.Estado
-                                     }).ToListAsync();
-                                      
-        int registrosEnEstaPagina = listaOrdenesOrden.Count;                  
+        query = AplicarFiltros(query, request, filtrarTecnico: rolUsuario != Rol.TECNICO);
+
+        // Sin resultados no es un error: se devuelve la página vacía
+        var totalRegistros = await query.CountAsync();
+
+        var listaOrdenesOrden = await query
+            .OrderByDescending(o => o.FechaCreacion)
+            .ThenByDescending(o => o.OrdenTrabajoId)
+            .Skip((request.Pagina - 1) * request.CanPagina)
+            .Take(request.CanPagina)
+            .Select(a => new OrdenListaResponse
+            {
+                OrdenId = a.OrdenTrabajoId,
+                Sot = a.Sot,
+                Descripcion = a.Descripcion,
+                Estado = a.Estado,
+                Fecha = a.FechaCreacion,
+                UsuarioId = a.UsuarioId,
+                NombreUsuario = a.Usuario.NombreCompleto,
+                PrecioTotal = a.PrecioTotal,
+                MontoAPagar = a.SinPago ? 0 : (a.PrecioTotal ?? 0) - a.Descuento,
+                Auditada = a.FechaAuditoria != null,
+                EstadoPago = a.EstadoPago,
+                MotivoNoPago = a.MotivoNoPago,
+                CantidadImagenes = a.Archivos.Count
+            }).ToListAsync();
 
         return new PagedResponse<OrdenListaResponse>
         {
             ListaOrdenes = listaOrdenesOrden,
             TotalRegistros = totalRegistros,
-            TotalRegistrosPagina = registrosEnEstaPagina,
+            TotalRegistrosPagina = listaOrdenesOrden.Count,
+            TamanoPagina = request.CanPagina,
             NumeroPagina = request.Pagina
         };
+    }
+
+    // Auditoría de almacén: Sí pago / No pago.
+    // Sí pago mantiene el descuento que tenga; No pago = multa (Claro paga S/ 0.00).
+    public async Task<AuditoriaPagoResponse> AuditarPagoAsync(int ordenId, AuditoriaPagoRequest request, int cuentaId)
+    {
+        var orden = await _context.Ordenes.FirstOrDefaultAsync(o => o.OrdenTrabajoId == ordenId)
+            ?? throw new KeyNotFoundException($"No se encontró la SOT con id {ordenId}.");
+
+        var motivo = request.MotivoNoPago?.Trim();
+        var observacion = string.IsNullOrWhiteSpace(request.ObservacionPago) ? null : request.ObservacionPago.Trim();
+
+        switch (request.EstadoPago)
+        {
+            case EstadoPago.NoPago:
+                if (string.IsNullOrEmpty(motivo))
+                    throw new InvalidOperationException("Indica el motivo por el que no se paga la SOT.");
+                orden.SinPago = true;
+                orden.Descuento = orden.PrecioTotal ?? 0;
+                orden.MotivoNoPago = motivo;
+                break;
+
+            case EstadoPago.SiPago:
+                // si antes era multa, vuelve a pagarse completo; un descuento parcial se respeta
+                if (orden.SinPago) orden.Descuento = 0;
+                orden.SinPago = false;
+                orden.MotivoNoPago = null;
+                break;
+
+            default:
+                throw new InvalidOperationException("Elige Sí pago o No pago.");
+        }
+
+        orden.EstadoPago = request.EstadoPago;
+        orden.ObservacionPago = observacion;
+        orden.FechaAuditoria = DateTime.UtcNow;
+        orden.AuditadoPorCuentaId = cuentaId;
+        orden.MarcarLiquidada();   // la liquidación solo existe una vez auditada
+
+        await _context.SaveChangesAsync();
+
+        return new AuditoriaPagoResponse
+        {
+            OrdenId = orden.OrdenTrabajoId,
+            EstadoPago = orden.EstadoPago,
+            MotivoNoPago = orden.MotivoNoPago,
+            ObservacionPago = orden.ObservacionPago,
+            FechaAuditoria = orden.FechaAuditoria,
+            MontoAPagar = orden.SinPago ? 0 : Math.Max(0, (orden.PrecioTotal ?? 0) - orden.Descuento),
+        };
+    }
+
+    // Filtros del listado; también los usa la auditoría masiva para "Auditar todo"
+    private static IQueryable<OrdenTrabajo> AplicarFiltros(IQueryable<OrdenTrabajo> query, ListRequestOrdenesDto request, bool filtrarTecnico)
+    {
+        if (filtrarTecnico && request.TecnicoId.HasValue)
+            query = query.Where(o => o.UsuarioId == request.TecnicoId.Value);
+
+        if (!string.IsNullOrWhiteSpace(request.Buscar))
+        {
+            var texto = request.Buscar.Trim();
+            query = query.Where(o => o.Sot.ToString().Contains(texto));
+        }
+
+        if (request.Estado.HasValue)
+            query = query.Where(o => o.Estado == request.Estado.Value);
+
+        if (request.Auditada.HasValue)
+            query = request.Auditada.Value
+                ? query.Where(o => o.FechaAuditoria != null)
+                : query.Where(o => o.FechaAuditoria == null);
+
+        if (request.Desde.HasValue)
+        {
+            var desde = DateTime.SpecifyKind(request.Desde.Value.Date, DateTimeKind.Utc);
+            query = query.Where(o => o.FechaCreacion >= desde);
+        }
+
+        if (request.Hasta.HasValue)
+        {
+            var hasta = DateTime.SpecifyKind(request.Hasta.Value.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(o => o.FechaCreacion < hasta);
+        }
+
+        return query;
+    }
+
+    // Auditoría masiva sin descuento ni multa: solo toca las SOT que aún no están auditadas.
+    // Con Confirmar = false solo cuenta (para mostrar la confirmación); con true las audita.
+    public async Task<AuditarMasivoResponse> AuditarMasivoAsync(AuditarMasivoRequest request, int cuentaId)
+    {
+        IQueryable<OrdenTrabajo> query = _context.Ordenes;
+        query = request.OrdenIds is { Count: > 0 }
+            ? query.Where(o => request.OrdenIds.Contains(o.OrdenTrabajoId))          // las seleccionadas
+            : AplicarFiltros(query, request.Filtros ?? new ListRequestOrdenesDto(), filtrarTecnico: true);   // "Auditar todo"
+
+        var respuesta = new AuditarMasivoResponse
+        {
+            YaAuditadas = await query.CountAsync(o => o.FechaAuditoria != null),
+        };
+
+        var pendientes = query.Where(o => o.FechaAuditoria == null);
+        respuesta.SinImagen = await pendientes.CountAsync(o => !o.Archivos.Any());
+
+        if (!request.Confirmar)
+        {
+            respuesta.Auditadas = await pendientes.CountAsync();   // las que se auditarían
+            return respuesta;
+        }
+
+        // Un solo UPDATE con "FechaAuditoria IS NULL" en el WHERE: la BD garantiza que nunca se pise
+        // una SOT ya auditada, aunque la auditen a mano (p. ej. con multa) mientras corre esta operación.
+        // Estado = LIQUIDADO es la misma regla de OrdenTrabajo.MarcarLiquidada().
+        var ahora = DateTime.UtcNow;
+        respuesta.Auditadas = await pendientes.ExecuteUpdateAsync(s => s
+            .SetProperty(o => o.Descuento, 0m)
+            .SetProperty(o => o.SinPago, false)
+            .SetProperty(o => o.ObservacionAuditoria, (string?)null)
+            .SetProperty(o => o.FechaAuditoria, ahora)
+            .SetProperty(o => o.AuditadoPorCuentaId, cuentaId)
+            .SetProperty(o => o.Estado, Estados.LIQUIDADO)
+            .SetProperty(o => o.EstadoPago, EstadoPago.SiPago)
+            .SetProperty(o => o.MotivoNoPago, (string?)null)
+            .SetProperty(o => o.FechaActualizacion, ahora));
+        return respuesta;
     }
 
 public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario)
@@ -256,7 +396,9 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
     var orden = await _context.Ordenes
         .AsNoTracking()
         .Include(o => o.Archivos)
+        .Include(o => o.Usuario)
         .Include(o => o.Detalles)
+            .ThenInclude(d => d.Servicio)
         .FirstOrDefaultAsync(o => o.OrdenTrabajoId == id)
         ?? throw new NotFoundException($"No se encontró la orden {id}");
 
@@ -269,6 +411,15 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
             Sot = orden.Sot,
             Descripcion = orden.Descripcion,
             Estado = orden.Estado,
+            Detalles = orden.Detalles.Select(detalle => new DetalleResponse
+            {
+                DetalleId = detalle.DetalleTrabajoId,
+                ServicioId = detalle.ServicioCodigo,
+                NombreServicio = detalle.Servicio?.Nombre ?? string.Empty,
+                Cantidad = detalle.Cantidad,
+                Tipo = detalle.Tipo,
+                PrecioTotal = detalle.PrecioTotal
+            }).ToList(),
             Imagenes = orden.Archivos.Select(MapearArchivo).ToList(),
             // Detalles y PrecioTotal quedan vacíos/default — el Técnico no los ve
         };
@@ -276,6 +427,41 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
 
     return orden.ToDetalleResponse(); // Admin/Almacén ven todo, tu extensión completa
 }
+
+    // Auditoría: se registra el descuento (o la multa) y su motivo. Se puede volver a auditar.
+    public async Task<OrdenDetalleResponse> AuditarAsync(int ordenId, AuditarOrdenRequest request, int cuentaId)
+    {
+        var orden = await _context.Ordenes
+            .Include(o => o.Archivos)
+            .Include(o => o.Usuario)
+            .Include(o => o.Detalles)
+                .ThenInclude(d => d.Servicio)
+            .FirstOrDefaultAsync(o => o.OrdenTrabajoId == ordenId)
+            ?? throw new KeyNotFoundException($"No se encontró la orden {ordenId}");
+
+        var total = orden.PrecioTotal ?? 0;
+        var observacion = request.Observacion?.Trim() ?? string.Empty;
+
+        if (request.Descuento < 0)
+            throw new InvalidOperationException("El descuento no puede ser negativo.");
+        if (!request.SinPago && request.Descuento > total)
+            throw new InvalidOperationException($"El descuento no puede ser mayor que el monto de la SOT (S/ {total:0.00}).");
+        if ((request.SinPago || request.Descuento > 0) && observacion == string.Empty)
+            throw new InvalidOperationException("Escribe en la observación el motivo del descuento o de la multa.");
+
+        orden.SinPago = request.SinPago;
+        orden.Descuento = request.SinPago ? total : Math.Round(request.Descuento, 2);
+        orden.ObservacionAuditoria = observacion == string.Empty ? null : observacion;
+        orden.FechaAuditoria = DateTime.UtcNow;
+        orden.AuditadoPorCuentaId = cuentaId;
+        orden.MarcarLiquidada(request.Estado);
+        // estado de pago en sincronía: multa = No pago; si no, Sí pago (con el descuento que tenga)
+        orden.EstadoPago = request.SinPago ? EstadoPago.NoPago : EstadoPago.SiPago;
+        orden.MotivoNoPago = request.SinPago ? (orden.MotivoNoPago ?? "Otro") : null;
+
+        await _context.SaveChangesAsync();
+        return orden.ToDetalleResponse();
+    }
 
 
     public async Task<OrdenDetalleResponse> ObtenerPorSotAsync(int sot)
@@ -318,6 +504,7 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
 
         }
             ordenTrabajo.PrecioTotal = ordenTrabajo.Detalles.Sum(a => a.PrecioTotal);
+            ordenTrabajo.MarcarEditada();
 
             await _context.SaveChangesAsync();
         
@@ -418,7 +605,8 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
                     _context.Archivos.Remove(archivo);
                 }
 
-                orden.PrecioTotal = _context.Detalles.Sum( o => o.PrecioTotal);
+                orden.PrecioTotal = orden.Detalles.Sum(d => d.PrecioTotal);
+                orden.MarcarEditada();   // si quedó INGRESADA (o la eligieron así), al editar pasa a PROCESADO
                 orden.FechaActualizacion = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
@@ -432,4 +620,5 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
         NombreArchivo = archivo.NombreArchivo,
         Src = archivo.Src
     };
+
 }

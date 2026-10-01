@@ -40,6 +40,16 @@ public static class OrdenTrabajoMapper
             Descripcion = orden.Descripcion,
             Estado = orden.Estado,
             PrecioTotal = orden.PrecioTotal,
+            UsuarioId = orden.UsuarioId,
+            Fecha = orden.FechaCreacion,
+            NombreUsuario = orden.Usuario?.NombreCompleto ?? string.Empty,
+            Descuento = orden.Descuento,
+            SinPago = orden.SinPago,
+            ObservacionAuditoria = orden.ObservacionAuditoria,
+            FechaAuditoria = orden.FechaAuditoria,
+            EstadoPago = orden.EstadoPago,
+            MotivoNoPago = orden.MotivoNoPago,
+            ObservacionPago = orden.ObservacionPago,
             Detalles = orden.Detalles.Select(d => d.ToResponse()).ToList(),
             Imagenes = orden.Archivos.Select(a => a.ToResponse()).ToList()
         };
@@ -52,6 +62,7 @@ public static class OrdenTrabajoMapper
         {
             DetalleId = detalle.DetalleTrabajoId,
             ServicioId = detalle.ServicioCodigo,
+            NombreServicio = detalle.Servicio?.Nombre ?? string.Empty,
             Cantidad = detalle.Cantidad,
             PrecioTotal = detalle.PrecioTotal,
             Tipo = detalle.Tipo

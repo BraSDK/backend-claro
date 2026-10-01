@@ -19,7 +19,8 @@ public static class ClaimsPrincipalExtensions
 
     public static int ObtenerUsuarioId(this ClaimsPrincipal user)
     {
-        var idClaim = user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+        // el "sub" del token es el Id de la CuentaUsuario. ASP.NET suele renombrarlo a NameIdentifier al leer el token
+        var idClaim = (user.FindFirst(ClaimTypes.NameIdentifier) ?? user.FindFirst(JwtRegisteredClaimNames.Sub))?.Value
             ?? throw new UnauthorizedAccessException("No se pudo determinar el usuario autenticado");
 
         return int.Parse(idClaim);

@@ -27,7 +27,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
             if (entry.State == EntityState.Added)
             {
-                entry.Entity.FechaCreacion = DateTime.UtcNow;
+                // FechaCreacion no se pisa: las entidades ya la inician en UtcNow,
+                // y la importación de Excel la llena con la fecha real de la SOT.
                 entry.Entity.FechaActualizacion = DateTime.UtcNow;
             }else if(entry.State == EntityState.Modified){
                 entry.Entity.FechaActualizacion =DateTime.UtcNow;

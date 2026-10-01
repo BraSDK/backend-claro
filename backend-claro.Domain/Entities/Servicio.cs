@@ -14,7 +14,6 @@ public class Servicio
         
     }
 
-
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.None)] //No es autoincrementable
     public int Codigo { get; set;} 
