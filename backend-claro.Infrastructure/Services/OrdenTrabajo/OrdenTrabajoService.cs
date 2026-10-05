@@ -614,6 +614,18 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
 
     }
 
+    public async Task<int> EliminarOrdenesPorMesAsync(int anio, int mes)
+    {
+        if(mes < 1 || mes > 12)
+            throw new ArgumentException("El mes debe estar entre 1 y 12");  
+        // Usamos DateTimeKind.Utc si tu base de datos guarda fechas en UTC
+        var fechaInicio = new DateTime(anio, mes, 1, 0, 0, 0, DateTimeKind.Utc);
+        var fechaFin = fechaInicio.AddMonths(1);
+
+        int registrosEliminados = await _context.Ordenes.Where(o => o.FechaCreacion >= fechaInicio && o.FechaCreacion < fechaFin).ExecuteDeleteAsync();
+        return registrosEliminados;
+    }
+
     private static ArchivoResponse MapearArchivo(OrdenTrabajoArchivo archivo) => new()
     {
         ArchivoId = archivo.ArchivoId,

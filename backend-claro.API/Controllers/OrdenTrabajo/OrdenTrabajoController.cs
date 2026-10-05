@@ -276,4 +276,26 @@ public class OrdenTrabajoController : ControllerBase
         }
     }
 
+    //============ Eliminar por Mes - Excel ==============
+    [HttpDelete("eliminar-importacion/{anio}/{mes}")]
+    [Authorize(nameof(Rol.ADMIN))]
+    public async Task<ActionResult> EliminarOrdenesPorMes(int anio, int mes)
+    {
+        try
+        {
+            var cantidadEliminada = await _service.EliminarOrdenesPorMesAsync(anio, mes);
+            return Ok(new
+            {
+                mensaje = $"Se eliminaron {cantidadEliminada} ordenes de trabajo importadas en el {mes}/{anio}.",
+                cantidad =  cantidadEliminada
+            });
+        }catch(ArgumentException ex)
+        {
+            return BadRequest (new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode (500, new {error = "Ocurrió un error al intentar eliminar la importación del mes.", detalle = ex.Message});
+        }
+    }  
 }

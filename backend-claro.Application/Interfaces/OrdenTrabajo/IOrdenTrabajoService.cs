@@ -30,4 +30,7 @@ public interface IOrdenTrabajoService
     // ============ ARCHIVOS ============
     Task<List<ArchivoResponse>> AgregarArchivosAsync(int ordenId, List<IFormFile> archivos);
     Task EliminarArchivoAsync(int ordenId, int archivoId);
+
+    // ============ ELIMINAR ============
+    Task<int> EliminarOrdenesPorMesAsync(int anio, int mes);
 }
