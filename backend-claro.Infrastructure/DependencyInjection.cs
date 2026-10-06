@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IImportarOrdenesService, ImportarOrdenesService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IConciliacionService, ConciliacionService>();
+        services.AddScoped<IAdicionales, AdicionalService>();
 
         // 5. Configuración JWT
         var jwtSettings = configuration.GetSection("JwtSettings");

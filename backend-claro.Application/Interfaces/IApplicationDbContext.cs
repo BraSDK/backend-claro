@@ -12,6 +12,7 @@ public interface IApplicationDbContext
     DbSet<DetalleTrabajo> Detalles {get; set;}
 
     DbSet<OrdenTrabajoArchivo> Archivos {get; set;}
+    DbSet<CostoAdicional> Adicionales {get; set;}
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

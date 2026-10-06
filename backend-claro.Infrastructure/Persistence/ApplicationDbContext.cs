@@ -17,7 +17,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<DetalleTrabajo> Detalles { get; set; }
     public DbSet<Servicio> Servicios { get; set; }
     public DbSet<OrdenTrabajoArchivo> Archivos { get; set; }
-    
+
+    public DbSet<CostoAdicional> Adicionales {get; set;}
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var entries = ChangeTracker.Entries<IAuditable>();
