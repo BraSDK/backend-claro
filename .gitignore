@@ -489,3 +489,6 @@ appsettings.json
 appsettings.*.json
 # credenciales de usuarios de prueba (no subir)
 *.local.json
+
+# respaldos de la base de datos (no subir)
+respaldos/

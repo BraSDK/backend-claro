@@ -5,14 +5,15 @@ namespace backend_claro.Application.Mappings;
 public static class OrdenTrabajoMapper
 {
 
-    
-    public static OrdenTrabajo ToEntity(this CrearOrdenRequest request)
+    //para devolver el estado creado
+    public static OrdenTrabajo ToEntity(this CrearOrdenPorTecnicoRequest request)
     {
         return new OrdenTrabajo
         {
             Sot = request.Sot,
-            Descripcion = request.Descripcion,
-            Estado = request.Estado
+            TrabajoRealizado = request.TrabajoRealizado,
+            EstadoSistema = request.EstadoSistema,
+            EstadoCampo = request.EstadoCampo
         };
     }
 
@@ -61,8 +62,8 @@ public static class OrdenTrabajoMapper
         return new DetalleResponse
         {
             DetalleId = detalle.DetalleTrabajoId,
-            ServicioId = detalle.ServicioCodigo,
-            NombreServicio = detalle.Servicio?.Nombre ?? string.Empty,
+            Concepto = detalle.Concepto,
+            PrecioUnitario = detalle.PrecioUnitario,
             Cantidad = detalle.Cantidad,
             PrecioTotal = detalle.PrecioTotal,
             Tipo = detalle.Tipo
@@ -83,9 +84,10 @@ public static class OrdenTrabajoMapper
     {
         return new DetalleTrabajo
         {
-               
-            ServicioCodigo = request.ServicioId,
-            Cantidad = request.Cantidad, 
+            Concepto = request.Concepto,
+            PrecioUnitario = request.PrecioUnitario,
+            Cantidad = request.Cantidad,
+            PrecioTotal = request.PrecioUnitario * request.Cantidad,
             Tipo = request.Tipo,
 
         };
