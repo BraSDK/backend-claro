@@ -14,11 +14,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<CuentaUsuario> CuentaUsuarios { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
     public DbSet<OrdenTrabajo> Ordenes {get; set;}
-    public DbSet<DetalleTrabajo> Detalles { get; set; }
-    public DbSet<Servicio> Servicios { get; set; }
     public DbSet<OrdenTrabajoArchivo> Archivos { get; set; }
+    public DbSet<DetalleLiquidacion> Detalles { get; set; }
+    public DbSet<Servicio> Servicios { get; set; }
 
     public DbSet<CostoAdicional> Adicionales {get; set;}
+    public DbSet<Liquidacion> Liquidaciones { get; set; }
+    public DbSet<MotivoObservacion> motivos { get; set; }
+    public DbSet<ObservacionLiquidacion> Observaciones { get; set; }
+
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var entries = ChangeTracker.Entries<IAuditable>();

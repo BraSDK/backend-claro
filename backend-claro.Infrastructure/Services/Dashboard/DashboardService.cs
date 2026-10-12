@@ -82,11 +82,10 @@ public class DashboardService : IDashboardService
         // 4. Por servicio principal (los más realizados)
         respuesta.PorServicio = await detallesDelMes
             .Where(d => d.Tipo == TipoDetalle.SERVICIO)
-            .GroupBy(d => new { d.ServicioCodigo, d.Servicio.Nombre })
+            .GroupBy(d => d.Concepto)
             .Select(g => new ServicioResumen
             {
-                Codigo = g.Key.ServicioCodigo,
-                Nombre = g.Key.Nombre,
+                Nombre = g.Key,
                 Cantidad = g.Sum(d => d.Cantidad),
                 Monto = g.Sum(d => d.PrecioTotal),
             })

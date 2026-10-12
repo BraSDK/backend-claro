@@ -31,7 +31,6 @@ public class AdicionalService : IAdicionales
     public async Task EditarAdicional(int adicionalId,UpdateAdicionalDto request)
     {
         var adicionalObjeto = await _context.Adicionales.FirstOrDefaultAsync(a => a.AdicionalId == adicionalId)?? throw new NotFoundException("objeto no existe");
-        adicionalObjeto.Codigo = request.Codigo;
         adicionalObjeto.Nombre = request.Nombre;
         adicionalObjeto.Precio = request.Precio;
         adicionalObjeto.Tipo = request.Tipo;
@@ -53,7 +52,6 @@ public class AdicionalService : IAdicionales
                     var listaAdicionales = await _context.Adicionales.Select(a => new RequestAdicionalListDto
                     {
                             AdicionalId = a.AdicionalId,
-                            Codigo= a.Codigo,   
                             Nombre = a.Nombre,
                             Precio = a.Precio,
                             Tipo = a.Tipo,

@@ -9,7 +9,6 @@ public static class AdicionalMapper
     {
         return new CostoAdicional
         {
-            Codigo = request.Codigo,
             Nombre = request.Nombre,
             Precio = request.Precio,
             Tipo = request.Tipo,
@@ -22,7 +21,6 @@ public static class AdicionalMapper
     {
         return new RequestAdicionalDto
         {
-            Codigo = request.Codigo,
             Nombre = request.Nombre,
             Precio = request.Precio,
             Tipo = request.Tipo,

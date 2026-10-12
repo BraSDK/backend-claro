@@ -250,6 +250,16 @@ public class OrdenTrabajoController : ControllerBase
         return Ok(await _service.AuditarMasivoAsync(request, User.ObtenerUsuarioId()));
     }
 
+    // PATCH api/OrdenTrabajo/5/edicion-rapida   -> edición de un campo desde la tabla de Órdenes
+    [HttpPatch("{id}/edicion-rapida")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> EdicionRapida(int id, [FromBody] EdicionRapidaRequest request)
+    {
+        try { return Ok(await _service.EdicionRapidaAsync(id, request)); }
+        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+    }
+
     // ============ CARGA MASIVA ============
 
     // POST api/OrdenTrabajo/importar-excel   (multipart/form-data, campo "archivo")

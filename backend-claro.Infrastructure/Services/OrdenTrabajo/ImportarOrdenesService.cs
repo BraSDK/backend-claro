@@ -12,15 +12,16 @@ namespace backend_claro.Infrastructure.Services;
 // Carga masiva de SOTs desde el Excel "procesado".
 // Columnas esperadas (por nombre de cabecera, el orden no importa):
 //   FECHA | APELLIDOS | SOT | TIPO DE SERVICIO | COSTO | ADICIONAL | 150 | 220 | 300 | P TOTAL
-// - COSTO ya incluye el ADICIONAL, por eso el precio del servicio principal es COSTO - ADICIONAL.
+// - COSTO ya incluye el ADICIONAL, por eso el costo del servicio es COSTO - ADICIONAL.
+// - No usa el catálogo de servicios: cada detalle guarda su Concepto y el monto del Excel.
 // - P TOTAL = COSTO + drops; no se lee, se recalcula sumando los detalles.
 // - El archivo no se guarda: solo se lee la información.
 public class ImportarOrdenesService : IImportarOrdenesService
 {
-    private const string SERVICIO_ADICIONAL = "ADICIONAL";
+    private const string CONCEPTO_ADICIONAL = "ADICIONAL";
 
-    // columna del Excel -> (tipo de detalle, nombre del servicio genérico)
-    private static readonly (string Columna, TipoDetalle Tipo, string Servicio)[] Drops =
+    // columna del Excel -> (tipo de detalle, concepto que se guarda en el detalle)
+    private static readonly (string Columna, TipoDetalle Tipo, string Concepto)[] Drops =
     {
         ("150", TipoDetalle.DROP150, "DROP 150"),
         ("220", TipoDetalle.DROP200, "DROP 220"),   // el enum se llama DROP200, en el Excel la columna es 220
@@ -54,37 +55,12 @@ public class ImportarOrdenesService : IImportarOrdenesService
 
         int colFecha = Col("FECHA"), colTecnico = Col("APELLIDOS"), colSot = Col("SOT"),
             colServicio = Col("TIPO DE SERVICIO"), colCosto = Col("COSTO"), colAdicional = Col("ADICIONAL");
-        var colDrops = Drops.Select(d => (d.Tipo, d.Servicio, Columna: Col(d.Columna))).ToList();
+        var colDrops = Drops.Select(d => (d.Tipo, d.Concepto, Columna: Col(d.Columna))).ToList();
 
         // 2. Datos de la BD que se usan para buscar (en memoria, para no consultar fila por fila)
-        var servicios = await _context.Servicios.ToListAsync();
-        var serviciosPorNombre = servicios
-            .GroupBy(s => Normalizar(s.Nombre))
-            .ToDictionary(g => g.Key, g => g.First());
-        int siguienteCodigo = servicios.Count == 0 ? 1 : servicios.Max(s => s.Codigo) + 1;
-
         var usuariosPorNombre = (await _context.Usuarios.ToListAsync())
             .GroupBy(u => Normalizar(u.NombreCompleto))
             .ToDictionary(g => g.Key, g => g.First());
-
-        // Busca el servicio por nombre; si no existe lo crea con el precio de esta fila
-        Servicio ObtenerServicio(string nombre, decimal precio, Servicio.CategoriaServicio categoria)
-        {
-            var clave = Normalizar(nombre);
-            if (serviciosPorNombre.TryGetValue(clave, out var existente)) return existente;
-
-            var nuevo = new Servicio
-            {
-                Codigo = siguienteCodigo++,
-                Nombre = nombre.Trim(),
-                Precio = precio,
-                Categoria = categoria,
-            };
-            _context.Servicios.Add(nuevo);
-            serviciosPorNombre[clave] = nuevo;
-            respuesta.ServiciosCreados.Add(nuevo.Nombre);
-            return nuevo;
-        }
 
         // 3. Leer las filas
         var filas = rango.RowsUsed().Skip(1).ToList();
@@ -142,32 +118,29 @@ public class ImportarOrdenesService : IImportarOrdenesService
             var precioBase = costo.Value - adicional;
             if (precioBase < 0) { Error("El ADICIONAL es mayor que el COSTO"); continue; }
 
-            var categoria = Normalizar(nombreServicio).StartsWith("HFC")
-                ? Servicio.CategoriaServicio.HFC
-                : Servicio.CategoriaServicio.FTH;
-
             // 4. Armar los detalles: servicio principal + adicional + drops, con los montos del Excel
             var detalles = new List<DetalleTrabajo>();
 
-            void Agregar(Servicio servicio, TipoDetalle tipo, decimal monto) => detalles.Add(new DetalleTrabajo
+            // cada detalle guarda su concepto y el monto del Excel (no depende del catálogo de servicios)
+            void Agregar(string concepto, TipoDetalle tipo, decimal monto) => detalles.Add(new DetalleTrabajo
             {
-                ServicioCodigo = servicio.Codigo,
-                Servicio = servicio,
+                Concepto = concepto,
                 Cantidad = 1,
                 Tipo = tipo,
+                PrecioUnitario = monto,
                 PrecioTotal = monto,
             });
 
-            Agregar(ObtenerServicio(nombreServicio, precioBase, categoria), TipoDetalle.SERVICIO, precioBase);
+            Agregar(nombreServicio, TipoDetalle.SERVICIO, precioBase);
 
             if (adicional > 0)
-                Agregar(ObtenerServicio(SERVICIO_ADICIONAL, adicional, categoria), TipoDetalle.DETALLE, adicional);
+                Agregar(CONCEPTO_ADICIONAL, TipoDetalle.ADICIONAL, adicional);
 
             foreach (var drop in colDrops)
             {
                 var monto = LeerMonto(fila.Cell(drop.Columna)) ?? 0;
                 if (monto > 0)
-                    Agregar(ObtenerServicio(drop.Servicio, monto, categoria), drop.Tipo, monto);
+                    Agregar(drop.Concepto, drop.Tipo, monto);
             }
 
             // 5. Crear la SOT o reemplazar sus detalles si ya existe

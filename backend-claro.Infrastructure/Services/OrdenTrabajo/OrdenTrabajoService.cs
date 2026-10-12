@@ -7,6 +7,7 @@ using backend_claro.Application.Mappings;
 using backend_claro.Domain.Exceptions;
 using backend_claro.Application.DTOs;
 using backend_claro.Domain.Enums;
+using System.Linq.Expressions;
 namespace backend_claro.Infrastructure.Services;
 
 public class OrdenTrabajoService : IOrdenTrabajoService
@@ -22,58 +23,11 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         _storage = storage;
     }
 
-    public async Task EliminarDetalleAsync(int ordenId, int detalleId)
-    {
-        var  ordenTrabajo = await _context.Ordenes.Include( o => o.Detalles)
-                                                  .FirstOrDefaultAsync(o =>  o.OrdenTrabajoId == ordenId );
-        if(ordenTrabajo is null)
-        {
-            throw new NotFoundException(" No existe orden de trabajo con tal detalle");
-        }
-        var detalle = ordenTrabajo.Detalles.FirstOrDefault(a => a.DetalleTrabajoId == detalleId) ?? throw new NotFoundException("No se pudo encontrar detalle a elmiminar");
-        
-        _context.Detalles.Remove(detalle);
-        ordenTrabajo.MarcarEditada();
+    // LISTAR OPERACIONES DE LISTAR: 
 
-        await _context.SaveChangesAsync();
-       
-    }
 
-    public  async Task<DetalleResponse> AgregarDetalleAsync(int ordenId, CrearDetalleRequest request)
-    {
-        var  ordenTrabajo =await _context.Ordenes.Include( a => a.Detalles)
-                                                 .FirstOrDefaultAsync( o => o.OrdenTrabajoId == ordenId ) ?? throw new NotFoundException("No se pudo encontrar orden de trabajao");
-        var detalleOrden = request.ToDetalleEntity();
-        var Servicio =await _context.Servicios.FirstOrDefaultAsync(s => s.Codigo == detalleOrden.ServicioCodigo);
-        /*
-        if(ordenTrabajo.Estado == Estados.LIQUIDADO)
-        {
-            throw new InvalidOperationException(" No se puede editar una orden de Trabajo liquidada");
-        }
-        */
-
-        if(Servicio is null)
-        {
-            throw new NotFoundException("El servicio no existe");            
-        }
-
-        
-        detalleOrden.PrecioTotal = Servicio.Precio * detalleOrden.Cantidad;
-        
-        ordenTrabajo.Detalles.Add(detalleOrden);
-
-        decimal Total = ordenTrabajo.Detalles.Sum( a => a.PrecioTotal );
-
-        ordenTrabajo.PrecioTotal = Total;
-        ordenTrabajo.MarcarEditada();
-
-        await _context.SaveChangesAsync();
-
-        return detalleOrden.ToResponse();
-        
-    }
-
-    public async Task<OrdenResponse> CrearAsync(CrearOrdenRequest request)
+    // OPERACIONES DE CREAR
+    public async Task<OrdenResponse> CrearPorTecnicoAsync(CrearOrdenPorTecnicoRequest request)
     {
         var OTexiste = await _context.Ordenes.AnyAsync(o =>  o.Sot == request.Sot);
 
@@ -108,13 +62,101 @@ public class OrdenTrabajoService : IOrdenTrabajoService
 
         return OrdenTrabajoEntity.ToResponse();
     }
+    public async Task<OrdenResponse> CrearPorAlmacenAsync(CrearOrdenRequest request)
+    {
+        var OTexiste = await _context.Ordenes.AnyAsync(o =>  o.Sot == request.Sot);
+
+        if (OTexiste)
+        {
+            throw new Exception($"Esta Orden de trabajo con Sot {request.Sot} ya existe");
+        }
+
+        var UserCreator = await _context.Usuarios.FindAsync(request.UsuarioId);
+
+        if (UserCreator == null)
+        {
+            throw new Exception("No se puede guardar Orden de trabajo sin Usuario creador");
+        }
+
+        var OrdenTrabajoEntity =request.ToEntity();
+        OrdenTrabajoEntity.Usuario = UserCreator;
+        foreach (FormFile img in request.Imagenes)
+        {
+            OrdenTrabajoEntity.Archivos.Add(new OrdenTrabajoArchivo
+            {
+                NombreArchivo = img.FileName,
+                Src = await _storage.GestionarArchivo(img,"ordenes")
+            }
+            );
+        }
+
+        var newOrdenTrabajo = await _context.Ordenes.AddAsync(OrdenTrabajoEntity);
+        
+        int filasAfectadas = await _context.SaveChangesAsync();
+         
+
+        return OrdenTrabajoEntity.ToResponse();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //
+
+    public async Task EliminarDetalleAsync(int ordenId, int detalleId)
+    {
+        var  ordenTrabajo = await _context.Ordenes.Include( o => o.Detalles)
+                                                  .FirstOrDefaultAsync(o =>  o.OrdenTrabajoId == ordenId );
+        if(ordenTrabajo is null)
+        {
+            throw new NotFoundException(" No existe orden de trabajo con tal detalle");
+        }
+        var detalle = ordenTrabajo.Detalles.FirstOrDefault(a => a.DetalleTrabajoId == detalleId) ?? throw new NotFoundException("No se pudo encontrar detalle a elmiminar");
+        
+        _context.Detalles.Remove(detalle);
+        ordenTrabajo.MarcarEditada();
+
+        await _context.SaveChangesAsync();
+       
+    }
+
+    public  async Task<DetalleResponse> AgregarDetalleAsync(int ordenId, CrearDetalleRequest request)
+    {
+        var  ordenTrabajo =await _context.Ordenes.Include( a => a.Detalles)
+                                                 .FirstOrDefaultAsync( o => o.OrdenTrabajoId == ordenId ) ?? throw new NotFoundException("No se pudo encontrar orden de trabajao");
+        // el precio viene en la petición (PrecioUnitario); el mapper ya calcula PrecioTotal = PrecioUnitario × Cantidad
+        var detalleOrden = request.ToDetalleEntity();
+
+        ordenTrabajo.Detalles.Add(detalleOrden);
+
+        decimal Total = ordenTrabajo.Detalles.Sum( a => a.PrecioTotal );
+
+        ordenTrabajo.PrecioTotal = Total;
+        ordenTrabajo.MarcarEditada();
+
+        await _context.SaveChangesAsync();
+
+        return detalleOrden.ToResponse();
+        
+    }
+
+
     public async Task<OrdenDetalleResponse> EditarOrdenByTecnicoAsync(int ordenId, EditarOrdenRequest request)
     {
         //por si acaso
         var OrdenTrabajo = await _context.Ordenes.Include( o => o.Archivos)
                                                  .FirstOrDefaultAsync(a => a.OrdenTrabajoId == ordenId)??
                                                   throw new NotFoundException($"Orden {ordenId} no encontrada");
-        if (request.Descripcion is not null)OrdenTrabajo.Descripcion = request.Descripcion;
+        if (request.TrabajoRealizado is not null)OrdenTrabajo.TrabajoRealizado = request.TrabajoRealizado;
         if (request.Sot.HasValue) OrdenTrabajo.Sot = request.Sot.Value;
         var rutasABorrar = new List<string>();
         if(request.ArchivosEliminados is { Count: > 0})
@@ -239,22 +281,8 @@ public class OrdenTrabajoService : IOrdenTrabajoService
             .ThenByDescending(o => o.OrdenTrabajoId)
             .Skip((request.Pagina - 1) * request.CanPagina)
             .Take(request.CanPagina)
-            .Select(a => new OrdenListaResponse
-            {
-                OrdenId = a.OrdenTrabajoId,
-                Sot = a.Sot,
-                Descripcion = a.Descripcion,
-                Estado = a.Estado,
-                Fecha = a.FechaCreacion,
-                UsuarioId = a.UsuarioId,
-                NombreUsuario = a.Usuario.NombreCompleto,
-                PrecioTotal = a.PrecioTotal,
-                MontoAPagar = a.SinPago ? 0 : (a.PrecioTotal ?? 0) - a.Descuento,
-                Auditada = a.FechaAuditoria != null,
-                EstadoPago = a.EstadoPago,
-                MotivoNoPago = a.MotivoNoPago,
-                CantidadImagenes = a.Archivos.Count
-            }).ToListAsync();
+            .Select(ProyeccionLista)
+            .ToListAsync();
 
         return new PagedResponse<OrdenListaResponse>
         {
@@ -316,6 +344,121 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         };
     }
 
+    // Fila de la tabla de Órdenes (la usan el listado y la edición rápida, para que devuelvan lo mismo)
+    private static readonly Expression<Func<OrdenTrabajo, OrdenListaResponse>> ProyeccionLista = a => new OrdenListaResponse
+    {
+        OrdenId = a.OrdenTrabajoId,
+        Sot = a.Sot,
+        Descripcion = a.TrabajoRealizado,
+        Estado = a.EstadoSistema,
+        Fecha = a.FechaCreacion,
+        UsuarioId = a.UsuarioId,
+        NombreUsuario = a.Usuario.NombreCompleto,
+        PrecioTotal = a.PrecioTotal,
+        MontoAPagar = a.SinPago ? 0 : (a.PrecioTotal ?? 0) - a.Descuento,
+        Auditada = a.FechaAuditoria != null,
+        EstadoPago = a.EstadoPago,
+        MotivoNoPago = a.MotivoNoPago,
+        CantidadImagenes = a.Archivos.Count,
+        Costo = a.Detalles.Where(d => d.Tipo == TipoDetalle.SERVICIO).Sum(d => d.PrecioTotal),
+        Adicional = a.Detalles.Where(d => d.Tipo == TipoDetalle.ADICIONAL).Sum(d => d.PrecioTotal),
+        Drop150 = a.Detalles.Where(d => d.Tipo == TipoDetalle.DROP150).Sum(d => d.PrecioTotal),
+        Drop200 = a.Detalles.Where(d => d.Tipo == TipoDetalle.DROP200).Sum(d => d.PrecioTotal),
+        Drop300 = a.Detalles.Where(d => d.Tipo == TipoDetalle.DROP300).Sum(d => d.PrecioTotal),
+    };
+
+    // concepto por defecto cuando se crea una línea desde la tabla (mismos nombres que usa el importador)
+    private static readonly Dictionary<TipoDetalle, string> ConceptoPorTipo = new()
+    {
+        [TipoDetalle.SERVICIO] = "SERVICIO",
+        [TipoDetalle.ADICIONAL] = "ADICIONAL",
+        [TipoDetalle.DROP150] = "DROP 150",
+        [TipoDetalle.DROP200] = "DROP 220",
+        [TipoDetalle.DROP300] = "DROP 300",
+    };
+
+    // Edición desde la tabla de Órdenes: un campo a la vez. Devuelve la fila actualizada.
+    public async Task<OrdenListaResponse> EdicionRapidaAsync(int ordenId, EdicionRapidaRequest request)
+    {
+        var orden = await _context.Ordenes
+            .Include(o => o.Detalles)
+            .FirstOrDefaultAsync(o => o.OrdenTrabajoId == ordenId)
+            ?? throw new KeyNotFoundException($"No se encontró la orden {ordenId}");
+
+        if (request.Descripcion is not null)
+        {
+            var texto = request.Descripcion.Trim();
+            if (texto.Length > 500) throw new InvalidOperationException("Las observaciones no pueden superar los 500 caracteres.");
+            orden.TrabajoRealizado = texto;
+        }
+
+        if (request.UsuarioId.HasValue && request.UsuarioId.Value != orden.UsuarioId)
+        {
+            var existe = await _context.Usuarios.AnyAsync(u => u.Id == request.UsuarioId.Value);
+            if (!existe) throw new InvalidOperationException("El técnico seleccionado no existe.");
+            orden.UsuarioId = request.UsuarioId.Value;
+        }
+
+        if (request.TipoMonto.HasValue && request.Monto.HasValue)
+            CambiarMonto(orden, request.TipoMonto.Value, request.Monto.Value);
+
+        // un estado elegido a mano se respeta; cualquier otra edición pasa INGRESADA -> PROCESADO
+        if (request.Estado.HasValue) orden.EstadoSistema = request.Estado.Value;
+        else orden.MarcarEditada();
+
+        await _context.SaveChangesAsync();
+
+        return await _context.Ordenes.AsNoTracking()
+            .Where(o => o.OrdenTrabajoId == ordenId)
+            .Select(ProyeccionLista)
+            .FirstAsync();
+    }
+
+    // Fija el monto de un tipo de línea: actualiza la línea existente, la crea o la quita (monto 0)
+    private void CambiarMonto(OrdenTrabajo orden, TipoDetalle tipo, decimal monto)
+    {
+        if (monto < 0) throw new InvalidOperationException("El monto no puede ser negativo.");
+        monto = Math.Round(monto, 2);
+
+        var lineas = orden.Detalles.Where(d => d.Tipo == tipo).ToList();
+        if (lineas.Count > 1)
+            throw new InvalidOperationException($"La SOT tiene {lineas.Count} líneas de este tipo; edítalas desde \"Editar detalles\".");
+
+        var linea = lineas.FirstOrDefault();
+        if (monto == 0)
+        {
+            if (linea is not null)
+            {
+                orden.Detalles.Remove(linea);
+                _context.Detalles.Remove(linea);
+            }
+        }
+        else if (linea is null)
+        {
+            orden.Detalles.Add(new DetalleTrabajo
+            {
+                Concepto = ConceptoPorTipo[tipo],
+                Tipo = tipo,
+                Cantidad = 1,
+                PrecioUnitario = monto,
+                PrecioTotal = monto,
+                OrdenTrabajoId = orden.OrdenTrabajoId,
+            });
+        }
+        else
+        {
+            // se respeta la cantidad: el precio unitario se ajusta para que el total sea el monto ingresado
+            linea.PrecioTotal = monto;
+            linea.PrecioUnitario = linea.Cantidad > 0 ? Math.Round(monto / linea.Cantidad, 3) : monto;
+            linea.FechaActualizacion = DateTime.UtcNow;
+        }
+
+        var nuevoTotal = orden.Detalles.Sum(d => d.PrecioTotal);
+        if (orden.FechaAuditoria != null && !orden.SinPago && orden.Descuento > nuevoTotal)
+            throw new InvalidOperationException($"El total (S/ {nuevoTotal:0.00}) quedaría por debajo del descuento auditado (S/ {orden.Descuento:0.00}). Ajusta primero la auditoría.");
+        orden.PrecioTotal = nuevoTotal;
+    }
+
     // Filtros del listado; también los usa la auditoría masiva para "Auditar todo"
     private static IQueryable<OrdenTrabajo> AplicarFiltros(IQueryable<OrdenTrabajo> query, ListRequestOrdenesDto request, bool filtrarTecnico)
     {
@@ -329,7 +472,7 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         }
 
         if (request.Estado.HasValue)
-            query = query.Where(o => o.Estado == request.Estado.Value);
+            query = query.Where(o => o.EstadoSistema == request.Estado.Value);
 
         if (request.Auditada.HasValue)
             query = request.Auditada.Value
@@ -384,7 +527,7 @@ public class OrdenTrabajoService : IOrdenTrabajoService
             .SetProperty(o => o.ObservacionAuditoria, (string?)null)
             .SetProperty(o => o.FechaAuditoria, ahora)
             .SetProperty(o => o.AuditadoPorCuentaId, cuentaId)
-            .SetProperty(o => o.Estado, Estados.LIQUIDADO)
+            .SetProperty(o => o.EstadoSistema, Estados.LIQUIDADO)
             .SetProperty(o => o.EstadoPago, EstadoPago.SiPago)
             .SetProperty(o => o.MotivoNoPago, (string?)null)
             .SetProperty(o => o.FechaActualizacion, ahora));
@@ -398,7 +541,6 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
         .Include(o => o.Archivos)
         .Include(o => o.Usuario)
         .Include(o => o.Detalles)
-            .ThenInclude(d => d.Servicio)
         .FirstOrDefaultAsync(o => o.OrdenTrabajoId == id)
         ?? throw new NotFoundException($"No se encontró la orden {id}");
 
@@ -409,13 +551,13 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
             OrdenId = orden.OrdenTrabajoId,
             UsuarioId = orden.UsuarioId,
             Sot = orden.Sot,
-            Descripcion = orden.Descripcion,
-            Estado = orden.Estado,
+            Descripcion = orden.TrabajoRealizado,
+            Estado = orden.EstadoSistema,
             Detalles = orden.Detalles.Select(detalle => new DetalleResponse
             {
                 DetalleId = detalle.DetalleTrabajoId,
-                ServicioId = detalle.ServicioCodigo,
-                NombreServicio = detalle.Servicio?.Nombre ?? string.Empty,
+                Concepto = detalle.Concepto,
+                PrecioUnitario = detalle.PrecioUnitario,
                 Cantidad = detalle.Cantidad,
                 Tipo = detalle.Tipo,
                 PrecioTotal = detalle.PrecioTotal
@@ -435,7 +577,6 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
             .Include(o => o.Archivos)
             .Include(o => o.Usuario)
             .Include(o => o.Detalles)
-                .ThenInclude(d => d.Servicio)
             .FirstOrDefaultAsync(o => o.OrdenTrabajoId == ordenId)
             ?? throw new KeyNotFoundException($"No se encontró la orden {ordenId}");
 
@@ -490,11 +631,7 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
             var detalleTemp = requestList.Find(a => a.DetalleId == item.DetalleTrabajoId);
             if (detalleTemp is not null)
             {
-                item.Cantidad = detalleTemp.Cantidad ?? item.Cantidad;
-                item.Tipo = detalleTemp.Tipo ?? item.Tipo;
-                item.ServicioCodigo = detalleTemp.ServicioCodigo ?? item.ServicioCodigo;
-                var ServicioConsulta = _context.Servicios.Find( detalleTemp.ServicioCodigo) ?? throw new InvalidOperationException("No existe tal servicio");
-                item.PrecioTotal = item.Cantidad * ServicioConsulta.Precio;
+                AplicarCambio(item, detalleTemp);
 
             }
             else
@@ -508,6 +645,18 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
 
             await _context.SaveChangesAsync();
         
+    }
+
+    // Aplica los campos que vengan en la edición y recalcula el total con el precio del propio detalle
+    // (nunca con el catálogo: el precio real es el que se registró, p. ej. el del Excel)
+    private static void AplicarCambio(DetalleTrabajo detalle, DetalleEditar cambio)
+    {
+        if (cambio.Concepto is not null) detalle.Concepto = cambio.Concepto;
+        if (cambio.PrecioUnitario.HasValue) detalle.PrecioUnitario = cambio.PrecioUnitario.Value;
+        if (cambio.Cantidad.HasValue) detalle.Cantidad = cambio.Cantidad.Value;
+        if (cambio.Tipo.HasValue) detalle.Tipo = cambio.Tipo.Value;
+        detalle.PrecioTotal = detalle.PrecioUnitario * detalle.Cantidad;
+        detalle.FechaActualizacion = DateTime.UtcNow;
     }
 
     public async Task EliminarOrdenAsync(int ordenId)
@@ -530,14 +679,13 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
 
                 var orden = await _context.Ordenes
                                         .Include(o => o.Detalles)
-                                            .ThenInclude(d => d.Servicio)
                                         .Include(o => o.Archivos)
                                         .FirstOrDefaultAsync(o => o.OrdenTrabajoId == ordenId)
                                         ?? throw new NotFoundException($"Orden {ordenId} no encontrada");
 
                 if (request.Sot.HasValue) orden.Sot = request.Sot.Value;
-                if (request.Descripcion is not null) orden.Descripcion = request.Descripcion;
-                if (request.Estado.HasValue) orden.Estado = request.Estado.Value;
+                if (request.Descripcion is not null) orden.TrabajoRealizado = request.Descripcion;
+                if (request.Estado.HasValue) orden.EstadoSistema = request.Estado.Value;
                 var tocaDetalles = request.DetallesNuevos.Any()
                     || request.DetallesEditados.Any()
                     || request.DetallesEliminados.Any();
@@ -556,42 +704,15 @@ public async Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id, Rol rolUsuario
                     var detalle = orden.Detalles.FirstOrDefault(d => d.DetalleTrabajoId == cambio.DetalleId)
                         ?? throw new NotFoundException($"Detalle {cambio.DetalleId} no pertenece a esta orden");
 
-                    var huboCambioDeServicio = cambio.ServicioCodigo.HasValue && cambio.ServicioCodigo.Value != detalle.ServicioCodigo;
-                    var huboCambioDeCantidad = cambio.Cantidad.HasValue && cambio.Cantidad.Value != detalle.Cantidad;
-
-                    if (huboCambioDeServicio)
-                    {
-                        var nuevoServicio = await _context.Servicios.FindAsync(cambio.ServicioCodigo!.Value)
-                            ?? throw new NotFoundException($"Servicio {cambio.ServicioCodigo} no encontrado");
-
-                        detalle.ServicioCodigo = nuevoServicio.Codigo;
-                        detalle.Servicio = nuevoServicio;
-                    }
-
-                    if (cambio.Cantidad.HasValue) detalle.Cantidad = cambio.Cantidad.Value;
-                    if (cambio.Tipo.HasValue) detalle.Tipo = cambio.Tipo.Value;
-
-                    if (huboCambioDeServicio || huboCambioDeCantidad)
-                        detalle.PrecioTotal = detalle.Servicio.Precio * detalle.Cantidad;
-
-                    detalle.FechaActualizacion = DateTime.UtcNow;
+                    AplicarCambio(detalle, cambio);
                 }
 
                 // ===== Detalles nuevos =====
                 foreach (var nuevo in request.DetallesNuevos)
                 {
-                    var servicio = await _context.Servicios.FindAsync(nuevo.ServicioId)
-                        ?? throw new NotFoundException($"Servicio {nuevo.ServicioId} no encontrado");
-
-                    orden.Detalles.Add(new DetalleTrabajo
-                    {
-                        ServicioCodigo = servicio.Codigo,
-                        Servicio = servicio,
-                        Cantidad = nuevo.Cantidad,
-                        PrecioTotal = servicio.Precio * nuevo.Cantidad,
-                        Tipo = nuevo.Tipo,
-                        OrdenTrabajoId = ordenId
-                    });
+                    var detalleNuevo = nuevo.ToDetalleEntity();   // Concepto, PrecioUnitario y PrecioTotal vienen de la petición
+                    detalleNuevo.OrdenTrabajoId = ordenId;
+                    orden.Detalles.Add(detalleNuevo);
                 }
 
                 // ===== Archivos eliminados =====

@@ -13,13 +13,15 @@ public interface IOrdenTrabajoService
     Task<OrdenDetalleResponse> ObtenerPorSotAsync(int sot);
 
 
-    // ============ ORDEN  ============
-    Task<OrdenResponse> CrearAsync(CrearOrdenRequest request);
+    // ============ CREAR POR ORDEN  ============
+    Task<OrdenResponse> CrearPorTecnicoAsync(CrearOrdenPorTecnicoRequest request);
+    Task<OrdenResponse> CrearPorAlmacenAsync(CrearOrdenPorAlmacenRequest request);
     Task<OrdenDetalleResponse> EditarOrdenByTecnicoAsync(int ordenId, EditarOrdenRequest request);
     Task EliminarOrdenAsync(int ordenId);
     Task<OrdenDetalleResponse> EditarCompletoAsync(int ordenId, EditarOrdenCompletaRequest request, Rol rolUsuario);
     Task<OrdenDetalleResponse> AuditarAsync(int ordenId, AuditarOrdenRequest request, int cuentaId);
     Task<AuditarMasivoResponse> AuditarMasivoAsync(AuditarMasivoRequest request, int cuentaId);
+    Task<OrdenListaResponse> EdicionRapidaAsync(int ordenId, EdicionRapidaRequest request);
     Task<AuditoriaPagoResponse> AuditarPagoAsync(int ordenId, AuditoriaPagoRequest request, int cuentaId);
 
     // ============ DETALLES  ============

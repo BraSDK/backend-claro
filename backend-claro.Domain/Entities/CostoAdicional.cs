@@ -7,9 +7,9 @@ namespace backend_claro.Domain.Entities;
 
 public class CostoAdicional :IAuditable
 {
-    public enum TipoAdicional { Drop, Adicional } 
-    public int AdicionalId {get; set;}
-    public string Codigo { get; set; } = String.Empty;   
+    public enum TipoAdicional { Drop, Adicional } //TIPO QUE VA A SEPARAR
+    [Key]
+    public int AdicionalId {get; set;}  
 
     public string Nombre {get; set;} = String.Empty;
 

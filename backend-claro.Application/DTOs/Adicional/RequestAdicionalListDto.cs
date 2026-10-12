@@ -4,7 +4,6 @@ public class RequestAdicionalListDto
 {
 
     public int AdicionalId {get; set;}
-    public string Codigo { get; set; } = String.Empty;   
 
     public string Nombre {get; set;} = String.Empty;
 

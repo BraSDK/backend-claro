@@ -1,7 +1,6 @@
 using backend_claro.Domain.Entities;
 public class RequestAdicionalDto
 {
-    public string Codigo { get; set; } = String.Empty;   
 
     public string Nombre {get; set;} = String.Empty;
 

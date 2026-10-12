@@ -22,6 +22,38 @@ namespace backend_claro.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("backend_claro.Domain.Entities.CostoAdicional", b =>
+                {
+                    b.Property<int>("AdicionalId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AdicionalId"));
+
+                    b.Property<string>("ColumnaExcel")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("FechaActualizacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Precio")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.HasKey("AdicionalId");
+
+                    b.ToTable("Adicionales");
+                });
+
             modelBuilder.Entity("backend_claro.Domain.Entities.CuentaUsuario", b =>
                 {
                     b.Property<int>("Id")
@@ -64,6 +96,11 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<int>("Cantidad")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Concepto")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<DateTime>("FechaActualizacion")
                         .HasColumnType("timestamp with time zone");
 
@@ -76,8 +113,8 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<decimal>("PrecioTotal")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("ServicioCodigo")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("PrecioUnitario")
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<int>("Tipo")
                         .HasColumnType("integer");
@@ -85,8 +122,6 @@ namespace backend_claro.Infrastructure.Migrations
                     b.HasKey("DetalleTrabajoId");
 
                     b.HasIndex("OrdenTrabajoId");
-
-                    b.HasIndex("ServicioCodigo");
 
                     b.ToTable("Detalles");
                 });
@@ -251,15 +286,7 @@ namespace backend_claro.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("backend_claro.Domain.Entities.Servicio", "Servicio")
-                        .WithMany()
-                        .HasForeignKey("ServicioCodigo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("OrdenTrabajo");
-
-                    b.Navigation("Servicio");
                 });
 
             modelBuilder.Entity("backend_claro.Domain.Entities.OrdenTrabajo", b =>

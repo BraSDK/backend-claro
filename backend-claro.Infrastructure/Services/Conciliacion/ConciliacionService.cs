@@ -162,8 +162,13 @@ public class ConciliacionService : IConciliacionService
             query = r.ConEvidencia.Value ? query.Where(o => o.Archivos.Any()) : query.Where(o => !o.Archivos.Any());
         if (r.CategoriaServicio.HasValue)
         {
-            var categoria = (Servicio.CategoriaServicio)r.CategoriaServicio.Value;
-            query = query.Where(o => o.Detalles.Any(d => d.Tipo == TipoDetalle.SERVICIO && d.Servicio.Categoria == categoria));
+            // sin catálogo de servicios, la categoría sale del prefijo del concepto: "HFC03 - ..." / "FTTH01 - ..."
+            query = r.CategoriaServicio.Value switch
+            {
+                0 => query.Where(o => o.Detalles.Any(d => d.Tipo == TipoDetalle.SERVICIO && d.Concepto.StartsWith("HFC"))),
+                1 => query.Where(o => o.Detalles.Any(d => d.Tipo == TipoDetalle.SERVICIO && d.Concepto.StartsWith("FTTH"))),
+                _ => query.Where(o => o.Detalles.Any(d => d.Tipo == TipoDetalle.SERVICIO && !d.Concepto.StartsWith("HFC") && !d.Concepto.StartsWith("FTTH"))),
+            };
         }
         if (r.Apelacion.HasValue)
             query = query.Where(o => o.MarcadaApelacion == r.Apelacion.Value);
@@ -190,7 +195,7 @@ public class ConciliacionService : IConciliacionService
         Tecnico = o.Usuario.NombreCompleto,
         TipoServicio = o.Detalles
             .Where(d => d.Tipo == TipoDetalle.SERVICIO)
-            .Select(d => d.Servicio.Nombre)
+            .Select(d => d.Concepto)
             .FirstOrDefault() ?? "",
         Valorizado = o.PrecioTotal ?? 0,
         Pagado = o.FechaAuditoria == null ? null : (o.SinPago ? 0 : (o.PrecioTotal ?? 0) - o.Descuento),

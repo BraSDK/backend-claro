@@ -7,7 +7,7 @@ namespace backend_claro.Application.DTOs.OrdenTrabajo;
 public class EditarOrdenRequest
 {
     public int? Sot { get; set; }
-    public string?Descripcion { get; set; } 
+    public string? TrabajoRealizado{ get; set; } 
     public int? UsuarioId {get; set;}
     public List<int>? ArchivosEliminados { get; set; } 
     public List<IFormFile>? ArchivosNuevos { get; set; } 

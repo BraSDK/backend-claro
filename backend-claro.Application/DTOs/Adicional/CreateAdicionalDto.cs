@@ -4,7 +4,6 @@ namespace backend_claro.Application.DTOs.Adicional;
 
 public class CrearAdicionalDto
 {
-    public string Codigo { get; set; } = String.Empty;   
 
     public string Nombre {get; set;} = String.Empty;
 

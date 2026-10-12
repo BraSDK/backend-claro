@@ -18,4 +18,11 @@ public class OrdenListaResponse
     public EstadoPago EstadoPago { get; set; }
     public string? MotivoNoPago { get; set; }
     public int CantidadImagenes { get; set; }
+
+    // montos por tipo de línea (suma de los detalles de cada tipo), para las columnas editables
+    public decimal Costo { get; set; }
+    public decimal Adicional { get; set; }
+    public decimal Drop150 { get; set; }
+    public decimal Drop200 { get; set; }
+    public decimal Drop300 { get; set; }
 }

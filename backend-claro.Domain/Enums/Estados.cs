@@ -2,8 +2,7 @@
     
     public enum Estados
     {
-        INGRESADA = 0,
-        PROCESADO = 1,
-
-        LIQUIDADO = 2,
+        INGRESADA = 0, //INGRESADA AL SISTEMA
+        LIQUIDADO = 1, //LIQUIDADO
+        VALIDADO =2 //VALIDO PAGO JOHN
     }
