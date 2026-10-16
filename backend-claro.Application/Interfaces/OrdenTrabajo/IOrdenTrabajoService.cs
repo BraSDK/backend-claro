@@ -15,7 +15,7 @@ public interface IOrdenTrabajoService
 
     // ============ CREAR POR ORDEN  ============
     Task<OrdenResponse> CrearPorTecnicoAsync(CrearOrdenPorTecnicoRequest request);
-    Task<OrdenResponse> CrearPorAlmacenAsync(CrearOrdenPorAlmacenRequest request);
+    // Task<OrdenResponse> CrearPorAlmacenAsync(CrearOrdenPorAlmacenRequest request); Aun no existe o dejo de existir
     Task<OrdenDetalleResponse> EditarOrdenByTecnicoAsync(int ordenId, EditarOrdenRequest request);
     Task EliminarOrdenAsync(int ordenId);
     Task<OrdenDetalleResponse> EditarCompletoAsync(int ordenId, EditarOrdenCompletaRequest request, Rol rolUsuario);

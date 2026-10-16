@@ -10,7 +10,7 @@ using backend_claro.Domain.Enums;
 using System.Linq.Expressions;
 namespace backend_claro.Infrastructure.Services;
 
-public class OrdenTrabajoService : IOrdenTrabajoService
+public partial class OrdenTrabajoService : IOrdenTrabajoService
 {
     
     private readonly IApplicationDbContext _context;
@@ -27,41 +27,6 @@ public class OrdenTrabajoService : IOrdenTrabajoService
 
 
     // OPERACIONES DE CREAR
-    public async Task<OrdenResponse> CrearPorTecnicoAsync(CrearOrdenPorTecnicoRequest request)
-    {
-        var OTexiste = await _context.Ordenes.AnyAsync(o =>  o.Sot == request.Sot);
-
-        if (OTexiste)
-        {
-            throw new Exception($"Esta Orden de trabajo con Sot {request.Sot} ya existe");
-        }
-
-        var UserCreator = await _context.Usuarios.FindAsync(request.UsuarioId);
-
-        if (UserCreator == null)
-        {
-            throw new Exception("No se puede guardar Orden de trabajo sin Usuario creador");
-        }
-
-        var OrdenTrabajoEntity =request.ToEntity();
-        OrdenTrabajoEntity.Usuario = UserCreator;
-        foreach (FormFile img in request.Imagenes)
-        {
-            OrdenTrabajoEntity.Archivos.Add(new OrdenTrabajoArchivo
-            {
-                NombreArchivo = img.FileName,
-                Src = await _storage.GestionarArchivo(img,"ordenes")
-            }
-            );
-        }
-
-        var newOrdenTrabajo = await _context.Ordenes.AddAsync(OrdenTrabajoEntity);
-        
-        int filasAfectadas = await _context.SaveChangesAsync();
-         
-
-        return OrdenTrabajoEntity.ToResponse();
-    }
     public async Task<OrdenResponse> CrearPorAlmacenAsync(CrearOrdenRequest request)
     {
         var OTexiste = await _context.Ordenes.AnyAsync(o =>  o.Sot == request.Sot);

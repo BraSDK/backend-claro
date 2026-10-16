@@ -1,8 +1,8 @@
-using backend_claro.Domain.Interfaces;
-using backend_claro.Domain.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-using System.Collections.ObjectModel;
+using backend_claro.Domain.Interfaces;
+using backend_claro.Domain.Enums;
+
 namespace backend_claro.Domain.Entities;
 
 public class Liquidacion : IAuditable
