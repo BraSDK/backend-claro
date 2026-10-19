@@ -59,7 +59,6 @@ public class OrdenTrabajoController : ControllerBase
         }
     }
 
-
     // POST Api/OrdenTrabajo/5/archivos   
     [HttpPost("{id}/archivos")]
     [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.TECNICO)}")]
@@ -88,6 +87,7 @@ public class OrdenTrabajoController : ControllerBase
         catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
+
     // PATCH api/OrdenTrabajo/5/edicion-rapida   -> edición de un campo desde la tabla de Órdenes
     [HttpPatch("{id}/edicion-rapida")]
     [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]

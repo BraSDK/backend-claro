@@ -14,13 +14,11 @@ public static class LiquidacionMapper
             FechaProgramacion = request.FechaProgramacion,
             NombreTecnico = request.NombreTecnico ?? "sin tecnico",
             EstadoSistema = request.EstadoSistema, 
-            Detalles = request.Detalles,
+            Detalles = request.Detalles.Select(d => d.ToEntity()).ToList(),
             EstadoSot =  request.EstadoSot,
             OrdenTrabajoId = request.OrdenTrabajoId,
-            OrdenTrabajo = request.OrdenTrabajo,
             UsuarioId = request.UsuarioId,
-            Usuario = request.Usuario,
-            Observaciones = request.Observaciones, 
+            Observaciones = request.Observaciones.Select(o => o.ToEntity()).ToList(), 
         };
     }
     public static ListarRequestLiquidacionesDto ToResponse(this Liquidacion request)
