@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
-using backend_claro.Application.DTOs.OrdenTrabajo;
+using backend_claro.Application.DTOs;
 using backend_claro.Application.Interfaces;
 using backend_claro.Domain.Entities;
 using backend_claro.Domain.Enums;

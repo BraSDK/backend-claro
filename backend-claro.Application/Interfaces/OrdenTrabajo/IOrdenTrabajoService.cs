@@ -1,5 +1,5 @@
 using backend_claro.Application.DTOs;
-using backend_claro.Application.DTOs.OrdenTrabajo;
+using backend_claro.Application.DTOs;
 using Microsoft.AspNetCore.Http;
 using backend_claro.Domain.Enums;
 
@@ -9,24 +9,10 @@ public interface IOrdenTrabajoService
 {
     // ============ LECTURA ============
     Task<PagedResponse<OrdenListaResponse>> ListarAsync(ListRequestOrdenesDto request, Rol rolUsuario, int cuentaId);
-    Task<OrdenDetalleResponse> ObtenerPorIdAsync(int id,Rol UsuarioRol);
-    Task<OrdenDetalleResponse> ObtenerPorSotAsync(int sot);
-
-
-    // ============ CREAR POR ORDEN  ============
-    Task<OrdenResponse> CrearPorTecnicoAsync(CrearOrdenPorTecnicoRequest request);
-    Task<OrdenResponse> CrearPorAlmacenAsync(CrearOrdenPorAlmacenRequest request);
-    Task<OrdenDetalleResponse> EditarOrdenByTecnicoAsync(int ordenId, EditarOrdenRequest request);
     Task EliminarOrdenAsync(int ordenId);
-    Task<OrdenDetalleResponse> EditarCompletoAsync(int ordenId, EditarOrdenCompletaRequest request, Rol rolUsuario);
-    Task<OrdenDetalleResponse> AuditarAsync(int ordenId, AuditarOrdenRequest request, int cuentaId);
-    Task<AuditarMasivoResponse> AuditarMasivoAsync(AuditarMasivoRequest request, int cuentaId);
     Task<OrdenListaResponse> EdicionRapidaAsync(int ordenId, EdicionRapidaRequest request);
     Task<AuditoriaPagoResponse> AuditarPagoAsync(int ordenId, AuditoriaPagoRequest request, int cuentaId);
 
-    // ============ DETALLES  ============
-    Task<DetalleResponse> AgregarDetalleAsync(int ordenId, CrearDetalleRequest request);
-    Task EditarDetallesAsync(int ordenId ,List<DetalleEditar> requestList);
     Task EliminarDetalleAsync(int ordenId, int detalleId);
 
     // ============ ARCHIVOS ============

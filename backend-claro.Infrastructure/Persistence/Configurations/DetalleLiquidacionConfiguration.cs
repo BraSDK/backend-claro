@@ -20,17 +20,13 @@ public class DetalleTrabajoConfiguration : IEntityTypeConfiguration<DetalleLiqui
         builder.HasOne(d => d.Liquidacion)
                .WithMany(l => l.Detalles)
                .HasForeignKey( d => d.LiquidacionId )
-               .OnDelete(DeleteBehavior.Restrict);
+               .OnDelete(DeleteBehavior.Cascade);
 
 
         builder.HasOne(d => d.CostoAdicional)
                .WithMany()
                .HasForeignKey(d => d.CostoAdicionalId)
                .OnDelete(DeleteBehavior.Restrict);
-
-        
-               
-        
 
     }
 }

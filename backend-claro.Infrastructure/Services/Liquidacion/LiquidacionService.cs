@@ -25,16 +25,16 @@ public class LiquidacionService : ILiquidacion
         var totalRegistros = await query.CountAsync();
 
         var listaLiquidaciones  = await query.AsNoTracking()
+                                             .Include( l => l.Detalles)
                                              .OrderByDescending(l=> l.FechaCreacion)
                                              .ThenByDescending( l => l.Sot)
                                              .Skip((request.Pagina-1) * request.CanPagina)
                                              .Take(request.CanPagina)
-                                             .Select( l => l.ToResponse())
                                              .ToListAsync();
 
         return new PagedResponse<ListarRequestLiquidacionesDto>
         {
-            ListaGenerica = listaLiquidaciones,
+            ListaGenerica = listaLiquidaciones.Select( l => l.ToResponse()).ToList(),
             NumeroPagina = request.Pagina,
             TamanoPagina = request.CanPagina,
             TotalRegistros = totalRegistros,
@@ -79,15 +79,16 @@ public class LiquidacionService : ILiquidacion
 
         foreach (var j in request.DetallesEditados)
         {
-            var detalle =await _context.Detalles.FirstOrDefaultAsync(d => d.DetalleLiquidacionId == j.DetalleId) ?? throw new NotFoundException("detalle no encontrado");
+            var detalle = liquidacion.Detalles.FirstOrDefault(d => d.DetalleLiquidacionId == j.DetalleId) ?? throw new NotFoundException("detalle no encontrado");
             if (j.CostoAdicionalId.HasValue)
             {
-                var costoAdicional = await _context.Adicionales.FirstOrDefaultAsync(a => a.AdicionalId == j.CostoAdicionalId);
+                var costoAdicional = await _context.Adicionales.FirstOrDefaultAsync(a => a.AdicionalId == j.CostoAdicionalId) ?? throw new NotFoundException("costo adicional no encontrado");
                 detalle.EditarDetalle(costoAdicional,cantidad : j.Cantidad);
-            }
+            }else{
             detalle.EditarDetalle(concepto: j.Concepto, precioUnitario: j.PrecioUnitario, cantidad: j.Cantidad);
-
+            }
         }
+        liquidacion.RecalcularPrecioTotalReal();
 
         foreach (var item in request.DetallesEliminados)
         {
@@ -117,7 +118,13 @@ public class LiquidacionService : ILiquidacion
         await _context.SaveChangesAsync();
     }
 
-     private static IQueryable<Liquidacion> AplicarFiltros(IQueryable<Liquidacion> query, ListParamsLiquidacionesDto request)
+    public async Task EliminarLiquidacionAsync(int id)
+    {
+        var liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync( l => l.LiquidacionId == id) ?? throw new NotFoundException("Liquidacion no encontrada");
+        _context.Liquidaciones.Remove(liquidacion);
+        await _context.SaveChangesAsync();
+    }
+    private static IQueryable<Liquidacion> AplicarFiltros(IQueryable<Liquidacion> query, ListParamsLiquidacionesDto request)
     {
         if (!string.IsNullOrWhiteSpace(request.Buscar))
         {
@@ -139,5 +146,7 @@ public class LiquidacionService : ILiquidacion
 
         return query;
     }
+
+
 }
 

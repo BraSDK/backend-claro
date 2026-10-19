@@ -23,9 +23,6 @@ public class OrdenTrabajoConfiguration : IEntityTypeConfiguration<OrdenTrabajo>
                   .WithOne(d => d.OrdenT)
                   .HasForeignKey(d => d.OrdenTrabajoId)
                   .OnDelete(DeleteBehavior.Cascade);
-        
-        
-
-        
+                  
     }
 }

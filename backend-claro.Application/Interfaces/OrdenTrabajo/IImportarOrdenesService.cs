@@ -1,4 +1,4 @@
-using backend_claro.Application.DTOs.OrdenTrabajo;
+using backend_claro.Application.DTOs;
 
 namespace backend_claro.Application.Interfaces;
 
