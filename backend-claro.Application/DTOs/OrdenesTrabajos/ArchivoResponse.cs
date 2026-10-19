@@ -1,4 +1,4 @@
-namespace backend_claro.Application.DTOs.OrdenTrabajo;
+namespace backend_claro.Application.DTOs;
 
 public class ArchivoResponse
 {

@@ -1,4 +1,4 @@
-namespace backend_claro.Application.DTOs.OrdenTrabajo;
+namespace backend_claro.Application.DTOs.Liquidaciones;
 
 // Auditoría masiva sin descuento ni multa.
 // Con OrdenIds se auditan esas SOT; sin OrdenIds se auditan todas las que cumplan los Filtros ("Auditar todo").

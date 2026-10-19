@@ -1,76 +1,9 @@
-using backend_claro.Application.DTOs.OrdenTrabajo;
+using backend_claro.Application.DTOs;
 using backend_claro.Domain.Entities;
-namespace backend_claro.Application.Mappings;
+namespace backend_claro.Application.Mappings.Ordenes;
 
 public static class OrdenTrabajoMapper
 {
-
-    //para devolver el estado creado
-    public static OrdenTrabajo ToEntity(this CrearOrdenPorTecnicoRequest request)
-    {
-        return new OrdenTrabajo
-        {
-            Sot = request.Sot,
-            TrabajoRealizado = request.TrabajoRealizado,
-            EstadoSistema = request.EstadoSistema,
-            EstadoCampo = request.EstadoCampo
-        };
-    }
-
-    // ============ SALIDA: Entidad -> DTO ============
-    public static OrdenResponse ToResponse(this OrdenTrabajo orden)
-    {
-        return new OrdenResponse
-        {
-            OrdenId = orden.OrdenTrabajoId,
-            Sot = orden.Sot,
-            Descripcion = orden.Descripcion,
-            Estado = orden.Estado,
-            UsuarioId = orden.UsuarioId,
-            Imagenes = orden.Archivos.Select(a => a.ToResponse()).ToList()
-        };
-    }
-
-    // Orden con detalles e imagenes (para el detalle completo)
-    public static OrdenDetalleResponse ToDetalleResponse(this OrdenTrabajo orden)
-    {
-        return new OrdenDetalleResponse
-        {
-            OrdenId = orden.OrdenTrabajoId,
-            Sot = orden.Sot,
-            Descripcion = orden.Descripcion,
-            Estado = orden.Estado,
-            PrecioTotal = orden.PrecioTotal,
-            UsuarioId = orden.UsuarioId,
-            Fecha = orden.FechaCreacion,
-            NombreUsuario = orden.Usuario?.NombreCompleto ?? string.Empty,
-            Descuento = orden.Descuento,
-            SinPago = orden.SinPago,
-            ObservacionAuditoria = orden.ObservacionAuditoria,
-            FechaAuditoria = orden.FechaAuditoria,
-            EstadoPago = orden.EstadoPago,
-            MotivoNoPago = orden.MotivoNoPago,
-            ObservacionPago = orden.ObservacionPago,
-            Detalles = orden.Detalles.Select(d => d.ToResponse()).ToList(),
-            Imagenes = orden.Archivos.Select(a => a.ToResponse()).ToList()
-        };
-    }
-
-    // Un detalle suelto (para el endpoint AgregarDetalle)
-    public static DetalleResponse ToResponse(this DetalleTrabajo detalle)
-    {
-        return new DetalleResponse
-        {
-            DetalleId = detalle.DetalleTrabajoId,
-            Concepto = detalle.Concepto,
-            PrecioUnitario = detalle.PrecioUnitario,
-            Cantidad = detalle.Cantidad,
-            PrecioTotal = detalle.PrecioTotal,
-            Tipo = detalle.Tipo
-        };
-    }
-
-    // Un archivo suelto (para el endpoint AgregarArchivos)
     public static ArchivoResponse ToResponse(this OrdenTrabajoArchivo archivo)
     {
         return new ArchivoResponse
@@ -79,18 +12,5 @@ public static class OrdenTrabajoMapper
             NombreArchivo = archivo.NombreArchivo,
             Src = archivo.Src
         };
-    }
-    public static DetalleTrabajo ToDetalleEntity(this CrearDetalleRequest request)
-    {
-        return new DetalleTrabajo
-        {
-            Concepto = request.Concepto,
-            PrecioUnitario = request.PrecioUnitario,
-            Cantidad = request.Cantidad,
-            PrecioTotal = request.PrecioUnitario * request.Cantidad,
-            Tipo = request.Tipo,
-
-        };
-
     }
 }

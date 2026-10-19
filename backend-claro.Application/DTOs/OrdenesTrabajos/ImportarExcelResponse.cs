@@ -1,4 +1,4 @@
-namespace backend_claro.Application.DTOs.OrdenTrabajo;
+namespace backend_claro.Application.DTOs;
 
 // Resumen de la carga masiva de SOTs desde Excel
 public class ImportarExcelResponse

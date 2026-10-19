@@ -11,14 +11,10 @@ public class OrdenTrabajoConfiguration : IEntityTypeConfiguration<OrdenTrabajo>
     {
         
             builder.HasOne(u => u.Usuario)
-                  .WithMany()
-                  .HasForeignKey(u => u.UsuarioId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                   .WithMany()
+                   .HasForeignKey(u => u.UsuarioId)
+                   .OnDelete(DeleteBehavior.Restrict);
             
-            builder.HasMany(o => o.Detalles)          
-                  .WithOne(d => d.OrdenTrabajo)      
-                  .HasForeignKey(d => d.OrdenTrabajoId)  
-                  .OnDelete(DeleteBehavior.Cascade);
 
             // se busca y se cruza mucho por SOT (listado, conciliación, importación)
             builder.HasIndex(o => o.Sot);

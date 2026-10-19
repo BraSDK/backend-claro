@@ -1,6 +1,6 @@
 using backend_claro.Domain.Enums;
 
-namespace backend_claro.Application.DTOs.OrdenTrabajo;
+namespace backend_claro.Application.DTOs;
 
 // PATCH api/OrdenTrabajo/{id}/auditoria-pago
 public class AuditoriaPagoRequest

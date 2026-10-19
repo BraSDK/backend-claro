@@ -12,7 +12,7 @@ public class DetalleLiquidacion:IAuditable
     public int LiquidacionId { get; set; } 
     public Liquidacion Liquidacion {get; set;} = null!;
 
-    // Qué adicional fue (para reportes). Null si es SERVICIO.
+    // Qué adicional fue (para reportes). Null si es SERVICIO => precio base
     public int? CostoAdicionalId { get; set; }
     public CostoAdicional? CostoAdicional { get; set; }
     [Required, MaxLength(150)]
@@ -29,4 +29,30 @@ public class DetalleLiquidacion:IAuditable
     
     public DateTime FechaActualizacion { get ; set; } = DateTime.UtcNow;
     public DateTime FechaCreacion {get; set;} = DateTime.UtcNow;
+
+    public void EditarDetalle( CostoAdicional? costoAdicional = null, string? concepto = null, decimal? precioUnitario= null, int? cantidad= null)
+    {
+        if(costoAdicional is not null)
+        {
+            CostoAdicionalId = costoAdicional.AdicionalId;
+            Tipo = TipoDetalle.ADICIONAL;
+            Concepto = costoAdicional.Nombre;
+            PrecioUnitario = costoAdicional.Precio;
+            if (cantidad.HasValue) Cantidad = cantidad.Value;
+            CalcularPrecioTotal();
+            return;
+        }
+        
+        if(concepto is not null) this.Concepto = concepto;
+        if (precioUnitario.HasValue) PrecioUnitario = precioUnitario.Value;
+        if (cantidad.HasValue) Cantidad = cantidad.Value;
+        Tipo = TipoDetalle.SERVICIO;
+        CalcularPrecioTotal();
+    }
+
+
+    public void CalcularPrecioTotal()
+    {
+        this.PrecioTotal = this.Cantidad * this.PrecioUnitario;
+    }
 }

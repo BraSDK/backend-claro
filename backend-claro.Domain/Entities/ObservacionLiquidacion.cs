@@ -3,6 +3,7 @@ using backend_claro.Domain.Enums;
 namespace backend_claro.Domain.Entities;
 public class ObservacionLiquidacion
 {
+    [Key]
     public int ObservacionLiquidacionId { get; set; }
 
     public int LiquidacionId { get; set; }
@@ -13,11 +14,18 @@ public class ObservacionLiquidacion
     public int? MotivoObservacionId { get; set; }      // opcional: elegido del autocompletado
     public MotivoObservacion? Motivo { get; set; }
 
-    [MaxLength(500)]
+    [MaxLength(200)]
     public string? Texto { get; set; }                 // opcional: lo que escribió libre
 
     public int UsuarioId { get; set; }
     public Usuario Usuario { get; set; } = null!;
-
     public DateTime Fecha { get; set; } = DateTime.UtcNow;
+
+
+    public void EditarObservacion(int? motivoObservacionId, string? texto)
+    {
+        if (motivoObservacionId.HasValue) MotivoObservacionId = motivoObservacionId;
+        if (texto is not null) Texto = texto;
+        Fecha = DateTime.UtcNow;
+    }
 }

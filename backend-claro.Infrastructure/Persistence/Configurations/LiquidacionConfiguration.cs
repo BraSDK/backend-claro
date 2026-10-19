@@ -23,6 +23,5 @@ public class LiquidacionConfiguration : IEntityTypeConfiguration<Liquidacion>
                .HasForeignKey(d => d.LiquidacionId)
                .OnDelete(DeleteBehavior.Cascade);
 
-        
     }        
 }

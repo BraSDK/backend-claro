@@ -1,7 +1,7 @@
 using backend_claro.Domain.Enums;
 using Microsoft.AspNetCore.Http;
 
-namespace backend_claro.Application.DTOs.OrdenTrabajo;
+namespace backend_claro.Application.DTOs;
 
 // Los detalles y las imagenes se editan por sus propios endpoints granulares.
 public class EditarOrdenRequest

@@ -34,8 +34,7 @@ public async Task<string> EliminarArchivo(string src)
     string rutaFisica = Path.GetFullPath(Path.Combine(rutaBase, src));
     Console.WriteLine("========================\n"+ rutaFisica + "\n==========================");
  
-    if (!rutaFisica.StartsWith(Path.GetFullPath(rutaBase), StringComparison.OrdinalIgnoreCase))
-    {
+    if (!rutaFisica.StartsWith(Path.GetFullPath(rutaBase), StringComparison.OrdinalIgnoreCase)){
         throw new UnauthorizedAccessException("Acceso denegado a la ruta especificada.");
     }
 

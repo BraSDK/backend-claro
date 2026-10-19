@@ -1,8 +1,11 @@
 using backend_claro.Domain.Interfaces;
 using backend_claro.Domain.Enums;
+using backend_claro.Domain.Entities;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Collections.ObjectModel;
+using backend_claro.Domain.Exceptions;
+using System.Globalization;
 namespace backend_claro.Domain.Entities;
 
 public class Liquidacion : IAuditable
@@ -14,7 +17,7 @@ public class Liquidacion : IAuditable
     public long Sot { get; set; }
     public String? TipoOrden {get; set;}
     public String NombreSubTipoOrden {get; set;} = String.Empty;
-    public DateTime FechaProgramacion {get; set;} = DateTime.UtcNow;
+    public DateTime FechaProgramacion {get; set;}
     public String NombreTecnico {get; set;} = String.Empty;
     public Estados EstadoSistema {get; set;} = Estados.INGRESADA; //EStado en este sistema
 
@@ -38,7 +41,7 @@ public class Liquidacion : IAuditable
     public Usuario Usuario { get; set; } = null!;
     public EstadoPago EstadoPago {get; set;} = EstadoPago.Pendiente;
 
-    // Se activa cuando editan la celda, trabajo con precioTotal Editable
+    // Se activa cuando editan la celda precioTotalReal con precioTotal Editable
     [Column(TypeName = "decimal(18,2)")]
     public decimal?  Descuento {get; set;} = 0;
 
@@ -52,5 +55,56 @@ public class Liquidacion : IAuditable
 
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
     public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
+    
+    public void RecalcularPrecioTotalReal()
+    {
+        PrecioTotalReal = Detalles.Sum(d => d.PrecioTotal);
+    }
+
+    public void AgregarDetalles(DetalleLiquidacion detalle)
+    {
+        Detalles.Add(detalle);
+        RecalcularPrecioTotalReal();
+    }
+
+    public void EliminarDetalle(int detalleId)
+    {
+        var detalle = Detalles.FirstOrDefault(d => d.DetalleLiquidacionId == detalleId)
+            ?? throw new NotFoundException($"No existe el detalle {detalleId} en esta liquidación");
+
+        Detalles.Remove(detalle);
+        RecalcularPrecioTotalReal();
+    }
+
+    public void InsertarDiferencia()
+    {
+        if(PrecioTotalEditable == PrecioTotalReal)
+        {
+            Descuento = 0;
+            return;
+        }
+
+        Descuento = PrecioTotalReal - PrecioTotalEditable;
+
+    }
+
+    // Liquidacion 
+    public void AgregarObservacion(ObservacionLiquidacion observacion)
+    {
+        Observaciones.Add(observacion);
+    }
+
+    public void EditarObservacion(int id, int? motivoObservacionId, string? texto)
+    {
+        var observacion = Observaciones.FirstOrDefault(o => o.ObservacionLiquidacionId == id) ?? throw new NotFoundException("Observación no encontrada");
+        observacion.EditarObservacion(motivoObservacionId, texto);
+    }
+
+    public void EliminarObservacion(int id)
+    {
+        var observacionElimnar = Observaciones.FirstOrDefault(o => o.ObservacionLiquidacionId == id) ?? throw new NotFoundException("No encontrado");
+        Observaciones.Remove(observacionElimnar);
+    }
+
 
 }

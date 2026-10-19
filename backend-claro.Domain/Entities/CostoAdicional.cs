@@ -7,7 +7,12 @@ namespace backend_claro.Domain.Entities;
 
 public class CostoAdicional :IAuditable
 {
-    public enum TipoAdicional { Drop, Adicional } //TIPO QUE VA A SEPARAR
+    /*
+        decos
+        repetidor
+        220 mts
+    */
+    public enum TipoAdicional { Adicional,DROP150,DROP200,DROP300} //TIPO QUE VA A SEPARAR
     [Key]
     public int AdicionalId {get; set;}  
 
@@ -21,5 +26,7 @@ public class CostoAdicional :IAuditable
     public string? ColumnaExcel { get; set; } 
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
     public DateTime FechaActualizacion { get; set;} =DateTime.UtcNow;
+
+
 
 }

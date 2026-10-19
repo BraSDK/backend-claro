@@ -1,6 +1,6 @@
 using backend_claro.Domain.Enums;
 
-namespace backend_claro.Application.DTOs.OrdenTrabajo;
+namespace backend_claro.Application.DTOs;
 
 
 public class OrdenListaResponse

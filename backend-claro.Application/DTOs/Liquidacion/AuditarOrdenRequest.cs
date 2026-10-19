@@ -1,6 +1,6 @@
 using backend_claro.Domain.Enums;
 
-namespace backend_claro.Application.DTOs.OrdenTrabajo;
+namespace backend_claro.Application.DTOs.Liquidaciones;
 
 // Resultado de auditar una SOT: descuento/penalización y su motivo
 public class AuditarOrdenRequest

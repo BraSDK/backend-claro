@@ -21,7 +21,7 @@ public class AdicionalService : IAdicionales
     {
         var ObjetoAdicional = await _context.Adicionales.FirstOrDefaultAsync(a => a.Nombre == adicional.Nombre);
 
-        if (ObjetoAdicional is not null) throw new AlredyExistException($"Ya existe un adicional registrado con este nombre");
+        if (ObjetoAdicional is not null) throw new AlreadyExistException($"Ya existe un adicional registrado con este nombre");
 
         await _context.Adicionales.AddAsync(adicional.ToEntity());
 

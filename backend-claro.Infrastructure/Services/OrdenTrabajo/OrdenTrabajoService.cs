@@ -98,18 +98,6 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         return OrdenTrabajoEntity.ToResponse();
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
     //
 
     public async Task EliminarDetalleAsync(int ordenId, int detalleId)

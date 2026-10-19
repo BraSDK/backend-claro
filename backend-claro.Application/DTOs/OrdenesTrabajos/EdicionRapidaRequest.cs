@@ -1,6 +1,6 @@
 using backend_claro.Domain.Enums;
 
-namespace backend_claro.Application.DTOs.OrdenTrabajo;
+namespace backend_claro.Application.DTOs;
 
 // Edición desde la tabla de Órdenes: se manda solo el campo que cambió.
 // Para los montos se indica el tipo de línea (costo, adicional o drop) y el nuevo monto (0 = quitar esa línea).
