@@ -18,5 +18,5 @@ public class CrearLiquidacionRequest
     public int? OrdenTrabajoId { get; set; }
         //Usuario que liquido la sot
     public int UsuarioId {get; set;}
-    public List<CrearObservacionDto> Observaciones = new List<CrearObservacionDto>();
+    public List<CrearObservacionDto> Observaciones {get; set;} = new List<CrearObservacionDto>();
 }

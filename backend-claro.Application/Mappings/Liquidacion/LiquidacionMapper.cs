@@ -13,12 +13,12 @@ public static class LiquidacionMapper
             NombreSubTipoOrden = request.NombreSubTipoOrden,
             FechaProgramacion = request.FechaProgramacion,
             NombreTecnico = request.NombreTecnico ?? "sin tecnico",
-            EstadoSistema = request.EstadoSistema, 
+            EstadoSistema = request.EstadoSistema,
             Detalles = request.Detalles.Select(d => d.ToEntity()).ToList(),
             EstadoSot =  request.EstadoSot,
             OrdenTrabajoId = request.OrdenTrabajoId,
             UsuarioId = request.UsuarioId,
-            Observaciones = request.Observaciones.Select(o => o.ToEntity()).ToList(), 
+            Observaciones = request.Observaciones.Select(o => o.ToEntity()).ToList(),
         };
     }
     public static ListarRequestLiquidacionesDto ToResponse(this Liquidacion request)
