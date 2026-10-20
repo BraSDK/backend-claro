@@ -4,7 +4,7 @@ using backend_claro.Domain.Entities;
 namespace backend_claro.Application.Mappings.Liquidaciones;
 public static class LiquidacionMapper
 {
-    public static Liquidacion ToEntity(this CrearLiquidacionRequest request)
+    public static Liquidacion ToEntity(this CrearLiquidacionRequest request) // Llega del front
     {
         return new Liquidacion
         {
@@ -21,7 +21,7 @@ public static class LiquidacionMapper
             Observaciones = request.Observaciones.Select(o => o.ToEntity()).ToList(), 
         };
     }
-    public static ListarRequestLiquidacionesDto ToResponse(this Liquidacion request)
+    public static ListarRequestLiquidacionesDto ToResponse(this Liquidacion request) //Sale de la bd
     {
         return new ListarRequestLiquidacionesDto
         {
