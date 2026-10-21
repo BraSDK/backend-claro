@@ -14,7 +14,7 @@ public static class DetalleLiquidacionMapper
             CostoAdicionalId = request.CostoAdicionalId,
             CostoAdicional = request.CostoAdicional,
             Concepto = request.Concepto,
-            PrecioUnitario = request.PrecioUnitario, 
+            PrecioUnitario = request.PrecioUnitario,
             Cantidad  = request.Cantidad,
             PrecioTotal = request.PrecioTotal,
             Tipo = request.Tipo
@@ -29,7 +29,7 @@ public static class DetalleLiquidacionMapper
             // Qué adicional fue (para reportes). Null si es SERVICIO => precio base
             CostoAdicionalId = request.CostoAdicionalId,
             Concepto = request.Concepto,
-            PrecioUnitario = request.PrecioUnitario, 
+            PrecioUnitario = request.PrecioUnitario,
             Cantidad  = request.Cantidad,
             PrecioTotal = request.PrecioTotal,
             Tipo = request.Tipo

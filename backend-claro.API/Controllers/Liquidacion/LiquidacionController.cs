@@ -56,8 +56,6 @@ public class LiquidacionController : ControllerBase
         try{
             // Llamamos al servicio que maneja la lógica
             await _service.EliminarLiquidacionAsync(id);
-
-            // 204 No Content es el estándar profesional para un DELETE exitoso
             return NoContent();
         }
         catch (Exception ex)
