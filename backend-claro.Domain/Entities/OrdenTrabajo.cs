@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using backend_claro.Domain.Enums;
+using backend_claro.Domain.Exceptions;
 using backend_claro.Domain.Interfaces;
 
 namespace backend_claro.Domain.Entities;
@@ -25,5 +26,11 @@ public class OrdenTrabajo : IAuditable
 
     public DateTime FechaCreacion {get; set;} = DateTime.UtcNow;
     public DateTime FechaActualizacion {get; set;} = DateTime.UtcNow;
+
+    public void AgregarArchivo(OrdenTrabajoArchivo img)
+    {
+        Archivos.Add(img);
+    }
+
 
 }

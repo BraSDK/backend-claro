@@ -1,12 +1,12 @@
 using backend_claro.Application.DTOs;
 using backend_claro.Application.Interfaces;
 using backend_claro.Domain.Enums;
+using backend_claro.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using backend_claro.Api.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Reflection;
 
 namespace backend_claro.API.Controllers;
 
@@ -20,6 +20,34 @@ public class OrdenTrabajoController : ControllerBase
     public OrdenTrabajoController(IOrdenTrabajoService service)
     {
         _service = service;
+    }
+
+    // GET api/OrdenTrabajo/List?pagina=1&canPagina=15&buscar=887&tecnicoId=4&desde=2026-10-01&hasta=2026-10-31
+    // Un técnico solo recibe sus propias órdenes (se decide en el servicio con el rol del token).
+    [HttpGet("List")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.TECNICO)},{nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> Listar([FromQuery] ListRequestOrdenesDto request)
+    {
+        return Ok(await _service.ListarAsync(request, User.ObtenerRol(), User.ObtenerUsuarioId()));
+    }
+
+    // POST api/OrdenTrabajo   (multipart/form-data)
+    // Campos de la orden + "imagenes" (opcional, varias). Crea la orden y luego sube sus imágenes.
+    [HttpPost]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.TECNICO)}")]
+    [RequestSizeLimit(50 * 1024 * 1024)]
+    public async Task<IActionResult> Crear([FromForm] CrearOrdenTrabajoRequest request, [FromForm] List<IFormFile>? imagenes)
+    {
+        try
+        {
+            var orden = await _service.CrearOrdenTrabajoAsync(request, User.ObtenerRol(), User.ObtenerUsuarioId());
+
+            if (imagenes is { Count: > 0 })
+                orden.Archivos = await _service.AgregarArchivosAsync(orden.OrdenTrabajoId, imagenes);
+
+            return CreatedAtAction(nameof(Listar), new { buscar = orden.Sot }, orden);
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
     [HttpDelete("{id}/delete")]
@@ -37,25 +65,10 @@ public class OrdenTrabajoController : ControllerBase
             // 204 No Content es el estándar profesional para un DELETE exitoso
             return NoContent();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             //_logger.LogError(ex, "Error al intentar eliminar la orden {Id}", id);
             return StatusCode(500, new { mensaje = "Error interno del servidor al eliminar la orden." });
-        }
-    }
-
-    // DELETE Api/OrdenTrabajo/5/detalles/9
-    [HttpDelete("{id}/detalles/{detalleId}")]
-    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
-    public async Task<IActionResult> EliminarDetalle(int id, int detalleId)
-    {
-        try 
-        { 
-            await _service.EliminarDetalleAsync(id, detalleId); return NoContent(); 
-        }
-        catch (KeyNotFoundException ex) 
-        { 
-            return NotFound(new { error = ex.Message }); 
         }
     }
 
@@ -65,7 +78,7 @@ public class OrdenTrabajoController : ControllerBase
     public async Task<IActionResult> AgregarArchivos(int id, [FromForm] List<IFormFile> archivos)
     {
         try { return Ok(await _service.AgregarArchivosAsync(id, archivos)); }
-        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (Exception ex) when (ex is NotFoundException or KeyNotFoundException) { return NotFound(new { error = ex.Message }); }
         catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
     }
 
@@ -75,26 +88,16 @@ public class OrdenTrabajoController : ControllerBase
     public async Task<IActionResult> EliminarArchivo(int id, int archivoId)
     {
         try { await _service.EliminarArchivoAsync(id, archivoId); return NoContent(); }
-        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (Exception ex) when (ex is NotFoundException or KeyNotFoundException) { return NotFound(new { error = ex.Message }); }
     }
 
-    // PATCH api/OrdenTrabajo/5/auditoria-pago   { estadoPago, motivoNoPago, observacionPago }
-    [HttpPatch("{id}/auditoria-pago")]
-    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
-    public async Task<IActionResult> AuditarPago(int id, [FromBody] AuditoriaPagoRequest request)
-    {
-        try { return Ok(await _service.AuditarPagoAsync(id, request, User.ObtenerUsuarioId())); }
-        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
-        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
-    }
-
-    // PATCH api/OrdenTrabajo/5/edicion-rapida   -> edición de un campo desde la tabla de Órdenes
+    // PATCH api/OrdenTrabajo/5/edicion-rapida   -> editar la orden (solo los campos que llegan)
     [HttpPatch("{id}/edicion-rapida")]
     [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
     public async Task<IActionResult> EdicionRapida(int id, [FromBody] EdicionRapidaRequest request)
     {
         try { return Ok(await _service.EdicionRapidaAsync(id, request)); }
-        catch (KeyNotFoundException ex) { return NotFound(new { error = ex.Message }); }
+        catch (Exception ex) when (ex is NotFoundException or KeyNotFoundException) { return NotFound(new { error = ex.Message }); }
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
 }

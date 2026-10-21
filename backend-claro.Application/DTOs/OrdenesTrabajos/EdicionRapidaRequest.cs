@@ -2,14 +2,13 @@ using backend_claro.Domain.Enums;
 
 namespace backend_claro.Application.DTOs;
 
-// Edición desde la tabla de Órdenes: se manda solo el campo que cambió.
-// Para los montos se indica el tipo de línea (costo, adicional o drop) y el nuevo monto (0 = quitar esa línea).
+// Edición de una orden de trabajo: se manda solo lo que cambia (lo que llega en null no se toca).
+// Sirve tanto para editar una celda en la tabla como para guardar el formulario completo.
 public class EdicionRapidaRequest
 {
-    public Estados? Estado { get; set; }
-    public string? Descripcion { get; set; }
-    public int? UsuarioId { get; set; }
-
-    public TipoDetalle? TipoMonto { get; set; }
-    public decimal? Monto { get; set; }
+    public int? Sot { get; set; }
+    public string? DocTecnico { get; set; }
+    public string? TrabajoRealizado { get; set; }
+    public EstadoClaro? EstadoCampo { get; set; }
+    public int? UsuarioId { get; set; }   // técnico
 }
