@@ -163,7 +163,7 @@ namespace backend_claro.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("FechaProgramacion")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime?>("FechaValidacion")
                         .HasColumnType("timestamp with time zone");

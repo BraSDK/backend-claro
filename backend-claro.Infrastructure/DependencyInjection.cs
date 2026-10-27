@@ -35,6 +35,9 @@ public static class DependencyInjection
         //services.AddScoped<IConciliacionService, ConciliacionService>();
         services.AddScoped<IAdicionales, AdicionalService>();
 
+        // 5. Inyeccion de ILiquidacionService:
+        services.AddScoped<ILiquidacion, LiquidacionService>();
+
         // 5. Configuración JWT
         var jwtSettings = configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"];

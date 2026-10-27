@@ -4,7 +4,8 @@ using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddCustomJsonOptions(); //Formato de Fecha
 
 // Configuración de CORS
 builder.Services.AddCors(options =>
