@@ -48,20 +48,19 @@ public class LiquidacionController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}/delete")]
+    [HttpDelete("{sot}/delete")]
     [Authorize(Roles = $"{nameof(Rol.ADMIN)}, {nameof(Rol.ALMACEN)}")] //cualquier usuario autenticado
-    public async Task<IActionResult> EliminarLiquidacion(int id)
+    public async Task<IActionResult> EliminarLiquidacion(long sot)
     {
 
         try{
             // Llamamos al servicio que maneja la lógica
-            await _service.EliminarLiquidacionAsync(id);
+            await _service.EliminarLiquidacionAsync(sot);
             return NoContent();
         }
         catch (Exception ex)
         {
-            //_logger.LogError(ex, "Error al intentar eliminar la orden {Id}", id);
-            return StatusCode(500, new { mensaje = "Error interno del servidor al eliminar la orden.", ex });
+            return StatusCode(500, new { mensaje = "Error interno del servidor al eliminar la liquidación.", error = ex.Message });
         }
     }
 
