@@ -327,6 +327,12 @@ namespace backend_claro.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ArchivoId"));
 
+                    b.Property<DateTime>("FechaActualizacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("NombreArchivo")
                         .IsRequired()
                         .HasColumnType("text");

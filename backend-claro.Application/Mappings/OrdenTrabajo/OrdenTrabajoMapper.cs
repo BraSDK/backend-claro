@@ -12,8 +12,7 @@ public static class OrdenTrabajoMapper
             DocTecnico = orden.DocTecnico,
             TrabajoRealizado = orden.TrabajoRealizado,
             UsuarioId = orden.UsuarioId,
-            EstadoCampo = orden.EstadoCampo,
-            Archivos = orden.Archivos.Select( a => a.ToEntity()).ToList(),
+            EstadoCampo = orden.EstadoCampo
         };
     }
     public static OrdenListaResponse ToResponse (this OrdenTrabajo orden)

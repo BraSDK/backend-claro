@@ -492,3 +492,4 @@ appsettings.*.json
 
 # respaldos de la base de datos (no subir)
 respaldos/
+usuario-prueba.local.txt

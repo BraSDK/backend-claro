@@ -58,17 +58,17 @@ public class LiquidacionService : ILiquidacion
     {
         var liquidacion = await _context.Liquidaciones.Include(l => l.Detalles)
                                                       .Include( l => l.Observaciones)
-                                                      .FirstOrDefaultAsync(l => l.LiquidacionId == request.LiquidacionId);
+                                                      .FirstOrDefaultAsync(l => l.Sot == request.Sot); // la SOT es única (índice único): es la clave para editar
 
         if(liquidacion is  null)
         {
             throw new InvalidOperationException("No existe ");
         }
 
-        liquidacion.Sot = request.Sot;
+        // La SOT no se reasigna: es la clave con la que se encontró el registro
         liquidacion.TipoOrden = request.TipoOrden;
         liquidacion.NombreSubTipoOrden = request.NombreSubTipoOrden;
-        liquidacion.FechaProgramacion =  request.FechaProgramacion;
+        liquidacion.FechaProgramacion = DateTime.SpecifyKind(request.FechaProgramacion.Date, DateTimeKind.Utc); // Npgsql (timestamptz) solo acepta UTC
         liquidacion.NombreTecnico = request.NombreTecnico ?? "sin tecnico";
         liquidacion.EstadoSistema = request.EstadoSistema;
 
@@ -120,7 +120,7 @@ public class LiquidacionService : ILiquidacion
 
     public async Task EliminarLiquidacionAsync(int id)
     {
-        var liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync( l => l.LiquidacionId == id) ?? throw new NotFoundException("Liquidacion no encontrada");
+        var liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync( l => l.Sot == id) ?? throw new NotFoundException("Liquidacion no encontrada"); // id = SOT
         _context.Liquidaciones.Remove(liquidacion);
         await _context.SaveChangesAsync();
     }
