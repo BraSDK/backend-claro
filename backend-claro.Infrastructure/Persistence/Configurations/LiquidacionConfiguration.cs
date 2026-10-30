@@ -12,6 +12,10 @@ public class LiquidacionConfiguration : IEntityTypeConfiguration<Liquidacion>
         builder.Property( l => l.Sot).IsRequired();
         builder.HasIndex(l => l.Sot).IsUnique();
 
+        builder.Property(l => l.FechaProgramacion)
+               .HasColumnType("timestamp with time zone")
+               .IsRequired();
+
         //relacion con orden trabajo
         builder.HasOne(l => l.OrdenTrabajo)
                .WithOne()

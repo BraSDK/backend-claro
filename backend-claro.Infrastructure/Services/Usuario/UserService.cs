@@ -115,5 +115,21 @@ public class UserService : IUserService
 
         return "El servicio eliminado correctamente";
     }
+
+    public async Task<bool> ActualizarPasswordAsync(int id, string nuevaPassword)
+    {
+        var usuario = await _context.CuentaUsuarios.FindAsync(id);
+        
+        if (usuario == null) 
+            return false;
+
+        // Hashear la contraseña antes de guardarla
+        usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(nuevaPassword);
+        
+        _context.CuentaUsuarios.Update(usuario);
+        await _context.SaveChangesAsync();
+        
+        return true;
+    }
 }
 

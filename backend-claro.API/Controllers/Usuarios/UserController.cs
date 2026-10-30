@@ -57,6 +57,24 @@ public class UserController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    [HttpPut("{id}/CambiarPassword")]
+    public async Task<IActionResult> CambiarPassword(int id, [FromBody] CambiarPasswordRequestDto request)
+    {
+        try
+        {
+            var exito = await _userService.ActualizarPasswordAsync(id, request.NuevaPassword);
+            
+            if (!exito) 
+                return NotFound(new { error = "Usuario no encontrado." });
+
+            return Ok(new { mensaje = "Contraseña actualizada exitosamente." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
     [Authorize(Roles = nameof(Rol.ADMIN))]
     [HttpDelete ("{codigo}")]
     public async Task<IActionResult> Delete(int id)
@@ -70,5 +88,5 @@ public class UserController : ControllerBase
         {
             return BadRequest(new { error = ex.Message});
         }
-    }
+    }    
 }

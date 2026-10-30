@@ -7,4 +7,5 @@ public interface IUserService
     Task<object> ListAsync(UserListResponseDto request);
     Task<string> UpdateAsync(EditRequestDto request, string rolLogueado);
     Task<string> DeleteAsync(int id);
+    Task<bool> ActualizarPasswordAsync(int id, string nuevaPassword);
 }
