@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using backend_claro.Domain.Interfaces;
 
 namespace backend_claro.Domain.Entities;
 
-public class OrdenTrabajoArchivo
+public class OrdenTrabajoArchivo : IAuditable
 {
-
     [Key]
     public int ArchivoId {get; set;} 
     public string NombreArchivo {get; set;} = string.Empty;
@@ -13,6 +13,6 @@ public class OrdenTrabajoArchivo
 
     public int OrdenTrabajoId { get; set; } 
     public OrdenTrabajo OrdenT {get; set;} = null!;
-
-
+    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
 }

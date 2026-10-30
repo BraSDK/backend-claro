@@ -11,7 +11,7 @@ public static class LiquidacionMapper
             Sot = request.Sot,
             TipoOrden =  request.TipoOrden ,
             NombreSubTipoOrden = request.NombreSubTipoOrden,
-            FechaProgramacion = request.FechaProgramacion,
+            FechaProgramacion = DateTime.SpecifyKind(request.FechaProgramacion.Date, DateTimeKind.Utc), // Npgsql (timestamptz) solo acepta UTC
             NombreTecnico = request.NombreTecnico ?? "sin tecnico",
             EstadoSistema = request.EstadoSistema,
             Detalles = request.Detalles.Select(d => d.ToEntity()).ToList(),
@@ -25,6 +25,7 @@ public static class LiquidacionMapper
     {
         return new ListarRequestLiquidacionesDto
         {
+            liquidacionId = (int) request.LiquidacionId,
             Sot =  (int) request.Sot,
             TipoOrden = request.TipoOrden,
             NombreSubTipoOrden = request.NombreSubTipoOrden,

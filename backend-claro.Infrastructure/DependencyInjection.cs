@@ -28,12 +28,13 @@ public static class DependencyInjection
         //services.AddScoped<IOrdenTrabajoService, OrdenTrabajoService>();
         services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
         
-        services.AddScoped<IFileStorageService, backend_claro.Infrastructure.Services.FileStorageService>();
-        //services.AddScoped<IOrdenTrabajoService, backend_claro.Infrastructure.Services.OrdenTrabajoService>();
+        services.AddScoped<IFileStorageService,FileStorageService>();
+        services.AddScoped<IOrdenTrabajoService, OrdenTrabajoService>();
         //services.AddScoped<IImportarOrdenesService, ImportarOrdenesService>();
         //services.AddScoped<IDashboardService, DashboardService>();
         //services.AddScoped<IConciliacionService, ConciliacionService>();
         services.AddScoped<IAdicionales, AdicionalService>();
+        services.AddScoped<ILiquidacion, LiquidacionService>();   // sin esto, todo /api/Liquidacion respondía 500
 
         // 5. Inyeccion de ILiquidacionService:
         services.AddScoped<ILiquidacion, LiquidacionService>();

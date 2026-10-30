@@ -6,6 +6,7 @@ namespace backend_claro.Application.DTOs.Liquidaciones;
 
 public class ListarRequestLiquidacionesDto
 {
+    public int liquidacionId {get; set;}
     public int Sot {get; set;}
     public String? TipoOrden {get; set;}
     public String NombreSubTipoOrden {get; set;} = String.Empty;
