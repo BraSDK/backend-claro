@@ -98,7 +98,7 @@ public class LiquidacionController : ControllerBase
     [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
     public async Task<IActionResult> PrevisualizarAuditoria([FromBody] PrevisualizarAuditoriaRequest request)
     {
-        return Ok(await _service.PrevisualizarAuditoriaAsync(request));
+        return Ok(await _service.PrevisualizarAuditoriaAsync( request ));
     }
 
     // Guarda el estado de pago / monto pagado / precio editado de una o varias SOT
