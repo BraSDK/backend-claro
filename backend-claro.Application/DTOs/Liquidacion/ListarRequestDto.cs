@@ -16,4 +16,16 @@ public class ListarRequestLiquidacionesDto
     public List<DetalleResponseDto> DetallesLiquidacion { get; set; } = new();
            // vacío = nada eliminado
     public decimal? PrecioTotalEditable {get; set;} //para guardar lo del campo editado en el excel
+    public decimal? PrecioTotalReal {get; set;}      // calculado por el sistema (suma de detalles)
+    public decimal? MontoPagado {get; set;}          // lo que pagó Claro
+    public EstadoPago EstadoPago {get; set;}
+    public DateTime? FechaValidacion {get; set;}     // null = sin auditar
+    public List<ObservacionResponseDto> Observaciones {get; set;} = new();
+}
+
+public class ObservacionResponseDto
+{
+    public int ObservacionLiquidacionId {get; set;}
+    public TipoObservacion Tipo {get; set;}
+    public string? Texto {get; set;}
 }
