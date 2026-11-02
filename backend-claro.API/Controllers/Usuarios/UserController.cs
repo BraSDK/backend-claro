@@ -59,7 +59,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("{id}/CambiarPassword")]
-    public async Task<IActionResult> CambiarPassword(int id, [FromBody] CambiarPasswordRequestDto request)
+    public async Task<IActionResult> CambiarPassword(int id, [FromBody] CambiarPasswordUserRequestDto request)
     {
         try
         {
