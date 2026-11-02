@@ -16,6 +16,7 @@ public class ListParamsLiquidacionesDto
     public string? Buscar { get; set; }          // SOT (o parte de ella)
     public Estados? Estado { get; set; }
     public bool? Auditada { get; set; }          // true = auditadas, false = sin auditar
+    public EstadoPago? EstadoPago { get; set; }
     public DateTime? Desde { get; set; }
     public DateTime? Hasta { get; set; }         // inclusive (se toma hasta el final del día)
 }

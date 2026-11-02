@@ -83,4 +83,21 @@ public class LiquidacionController : ControllerBase
         }
     }
 
+    // Cruza el Excel de pagos de Claro con las liquidaciones (no guarda)
+    [HttpPost("auditoria/previsualizar")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> PrevisualizarAuditoria([FromBody] PrevisualizarAuditoriaRequest request)
+    {
+        return Ok(await _service.PrevisualizarAuditoriaAsync(request));
+    }
+
+    // Guarda el estado de pago / monto pagado / precio editado de una o varias SOT
+    [HttpPut("auditoria")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> Auditar([FromBody] AuditarLiquidacionesRequest request)
+    {
+        var usuarioId = User.ObtenerUsuarioId();
+        return Ok(await _service.AuditarAsync(request, usuarioId));
+    }
+
 }

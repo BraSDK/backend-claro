@@ -103,17 +103,19 @@ public class UserService : IUserService
 
     public async Task<string> DeleteAsync(int id)
     {
-        var usuario = await _context.Usuarios.FindAsync(id);
+        // id = CuentaUsuario.Id (el que devuelve el listado). Se borra la cuenta y su perfil cae en cascada;
+        // antes se buscaba en Usuarios (perfil) con ese id y la cuenta quedaba sin perfil.
+        var cuenta = await _context.CuentaUsuarios.FindAsync(id);
 
-        if ( usuario == null)
+        if ( cuenta == null)
         {
             throw new ("El usuario no existe o se encuentra eliminado");
         }
 
-        _context.Usuarios.Remove(usuario);
+        _context.CuentaUsuarios.Remove(cuenta);
         await _context.SaveChangesAsync();
 
-        return "El servicio eliminado correctamente";
+        return "Usuario eliminado correctamente";
     }
 }
 
