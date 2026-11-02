@@ -168,6 +168,9 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<DateTime?>("FechaValidacion")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal?>("MontoPagado")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("NombreSubTipoOrden")
                         .IsRequired()
                         .HasColumnType("text");

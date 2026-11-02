@@ -11,6 +11,7 @@ public class LiquidacionConfiguration : IEntityTypeConfiguration<Liquidacion>
         builder.HasKey( l => l.LiquidacionId);   
         builder.Property( l => l.Sot).IsRequired();
         builder.HasIndex(l => l.Sot).IsUnique();
+        builder.Ignore(l => l.TotalACobrar);   // calculado, no es columna
 
         builder.Property(l => l.FechaProgramacion)
                .HasColumnType("timestamp with time zone")

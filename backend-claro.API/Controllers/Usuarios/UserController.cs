@@ -76,7 +76,7 @@ public class UserController : ControllerBase
         }
     }
     [Authorize(Roles = nameof(Rol.ADMIN))]
-    [HttpDelete ("{codigo}")]
+    [HttpDelete ("{id}")]   // antes "{codigo}": no coincidía con el parámetro id y siempre llegaba 0
     public async Task<IActionResult> Delete(int id)
     {
         try

@@ -47,7 +47,8 @@ public class AdicionalService : IAdicionales
 
     public async Task<List<RequestAdicionalListDto>> ListarAdicional(Rol rolUsuario)
     {
-        if (rolUsuario != 0)
+        // antes decía rolUsuario != 0, que dejaba fuera justo al ADMIN (Rol.ADMIN = 0)
+        if (rolUsuario != Rol.TECNICO)
         {
                     var listaAdicionales = await _context.Adicionales.Select(a => new RequestAdicionalListDto
                     {

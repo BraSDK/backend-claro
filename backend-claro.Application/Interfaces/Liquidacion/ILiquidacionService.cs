@@ -10,5 +10,8 @@ public interface ILiquidacion
     Task CrearLiquidacionAsync(CrearLiquidacionRequest request,int cuentaId);
     Task<PagedResponse<ListarRequestLiquidacionesDto>> ListarAsync(ListParamsLiquidacionesDto request,Rol rolUsuario,int cuentaId);
     Task EditarLiquidacionAsync(EditarLiquidacionRequestDto request,int cuentaId);
+    Task EliminarLiquidacionAsync(int id);
+    Task<PrevisualizarAuditoriaResponse> PrevisualizarAuditoriaAsync(PrevisualizarAuditoriaRequest request);
+    Task<AuditarLiquidacionesResponse> AuditarAsync(AuditarLiquidacionesRequest request, int cuentaId);
     Task EliminarLiquidacionAsync(long sot);
 }

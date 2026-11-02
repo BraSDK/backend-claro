@@ -42,6 +42,13 @@ public class Liquidacion : IAuditable
     public Usuario Usuario { get; set; } = null!;
     public EstadoPago EstadoPago {get; set;} = EstadoPago.Pendiente;
 
+    // Lo que Claro pagó por la SOT (del Excel de pagos o escrito a mano en la auditoría)
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? MontoPagado {get; set;}
+
+    // Total que se cobra: el editado si lo hay, si no el calculado por el sistema
+    public decimal TotalACobrar => PrecioTotalEditable ?? PrecioTotalReal ?? 0;
+
     // Se activa cuando editan la celda precioTotalReal con precioTotal Editable
     [Column(TypeName = "decimal(18,2)")]
     public decimal?  Descuento {get; set;} = 0;

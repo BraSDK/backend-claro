@@ -1,0 +1,9 @@
+Usuarios demo (solo base local). Misma contraseña para todos: Demo#2026
+
+ADMIN    admin@demo.claro             Ana Gutiérrez Medina
+ALMACEN  almacen@demo.claro           Rosa Paredes Salazar
+TECNICO  carlos.quispe@demo.claro     Carlos Quispe Mamani
+TECNICO  luis.huaman@demo.claro       Luis Huamán Torres
+TECNICO  jorge.condori@demo.claro     Jorge Condori Flores
+TECNICO  miguel.rojas@demo.claro      Miguel Rojas Chávez
+TECNICO  pedro.vargas@demo.claro      Pedro Vargas Ramos

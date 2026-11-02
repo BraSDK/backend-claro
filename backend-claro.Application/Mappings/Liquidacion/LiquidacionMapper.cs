@@ -34,7 +34,17 @@ public static class LiquidacionMapper
             EstadoSistema = request.EstadoSistema,
             DetallesLiquidacion = request.Detalles.Select( d => d.ToResponse()).ToList(),
            // vacío = nada eliminado
-            PrecioTotalEditable = request.PrecioTotalEditable
+            PrecioTotalEditable = request.PrecioTotalEditable,
+            PrecioTotalReal = request.PrecioTotalReal,
+            MontoPagado = request.MontoPagado,
+            EstadoPago = request.EstadoPago,
+            FechaValidacion = request.FechaValidacion,
+            Observaciones = request.Observaciones.Select(o => new ObservacionResponseDto
+            {
+                ObservacionLiquidacionId = o.ObservacionLiquidacionId,
+                Tipo = o.Tipo,
+                Texto = o.Texto,
+            }).ToList(),
         };
     }
 
