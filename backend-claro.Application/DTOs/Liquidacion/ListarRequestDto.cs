@@ -20,4 +20,12 @@ public class ListarRequestLiquidacionesDto
     public decimal? MontoPagado {get; set;}          // lo que pagó Claro
     public EstadoPago EstadoPago {get; set;}
     public DateTime? FechaValidacion {get; set;}     // null = sin auditar
+    public List<ObservacionResponseDto> Observaciones {get; set;} = new();
+}
+
+public class ObservacionResponseDto
+{
+    public int ObservacionLiquidacionId {get; set;}
+    public TipoObservacion Tipo {get; set;}
+    public string? Texto {get; set;}
 }

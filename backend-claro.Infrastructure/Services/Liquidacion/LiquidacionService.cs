@@ -26,6 +26,7 @@ public class LiquidacionService : ILiquidacion
 
         var listaLiquidaciones  = await query.AsNoTracking()
                                              .Include( l => l.Detalles)
+                                             .Include( l => l.Observaciones)
                                              .OrderByDescending(l=> l.FechaCreacion)
                                              .ThenByDescending( l => l.Sot)
                                              .Skip((request.Pagina-1) * request.CanPagina)
@@ -53,6 +54,11 @@ public class LiquidacionService : ILiquidacion
         var catalogo = await CatalogoAdicionalesAsync();
         foreach (var detalle in liquidacion.Detalles) AplicarPrecio(detalle, catalogo);
         liquidacion.RecalcularPrecioTotalReal();   // antes quedaba en null al crear y la auditoría no tenía con qué comparar
+
+        // quien escribe la observación es el usuario del token, no el que mande el front
+        var usuarioId = await UsuarioDeCuentaAsync(cuentaId);
+        foreach (var observacion in liquidacion.Observaciones) observacion.UsuarioId = usuarioId ?? observacion.UsuarioId;
+        AplicarObservacionNoPago(liquidacion, teniaNoPago: false);
         _context.Liquidaciones.Add(liquidacion);
         await _context.SaveChangesAsync();
     }
@@ -105,9 +111,13 @@ public class LiquidacionService : ILiquidacion
         }
         
         liquidacion.PrecioTotalEditable = request.PrecioTotalEditable;
+        var teniaNoPago = TieneObservacionNoPago(liquidacion);
+        var usuarioObservacion = await UsuarioDeCuentaAsync(cuentaId);
         foreach (var item in request.ObservacionesNuevas)
         {
-            liquidacion.AgregarObservacion(item.ToEntity());
+            var observacion = item.ToEntity();
+            observacion.UsuarioId = usuarioObservacion ?? observacion.UsuarioId;
+            liquidacion.AgregarObservacion(observacion);
         }
 
         foreach (var item in request.ObservacionesEditadas)
@@ -123,6 +133,7 @@ public class LiquidacionService : ILiquidacion
         {
             liquidacion.EliminarObservacion(index);
         }
+        AplicarObservacionNoPago(liquidacion, teniaNoPago);
         
         await _context.SaveChangesAsync();
     }
@@ -269,5 +280,30 @@ public class LiquidacionService : ILiquidacion
         else
             detalle.CalcularPrecioTotal();   // no se confía en el PrecioTotal que manda el front
     }
+
+    // ===== Observación de no pago =====
+    // Si la SOT tiene una observación "no pago" con texto, no se cobra: queda como NoPagara.
+    // Si la borran, ya no hay motivo de no pago: vuelve a Pendiente para auditarla otra vez.
+    private static void AplicarObservacionNoPago(Liquidacion liquidacion, bool teniaNoPago)
+    {
+        if (TieneObservacionNoPago(liquidacion))
+        {
+            liquidacion.EstadoPago = EstadoPago.NoPagara;
+            liquidacion.SinPago = true;
+        }
+        else if (teniaNoPago && liquidacion.EstadoPago == EstadoPago.NoPagara)
+        {
+            liquidacion.EstadoPago = EstadoPago.Pendiente;
+            liquidacion.SinPago = false;
+            liquidacion.FechaValidacion = null;
+            liquidacion.AuditadoPorCuentaId = null;
+        }
+    }
+
+    private static bool TieneObservacionNoPago(Liquidacion liquidacion) =>
+        liquidacion.Observaciones.Any(o => o.Tipo == TipoObservacion.NO_PAGO && !string.IsNullOrWhiteSpace(o.Texto));
+
+    private async Task<int?> UsuarioDeCuentaAsync(int cuentaId) =>
+        await _context.Usuarios.Where(u => u.AuthId == cuentaId).Select(u => (int?)u.Id).FirstOrDefaultAsync();
 }
 
