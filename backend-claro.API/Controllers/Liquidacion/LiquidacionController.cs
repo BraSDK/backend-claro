@@ -14,12 +14,10 @@ namespace backend_claro.API.Controllers;
 public class LiquidacionController : ControllerBase
 {
     private readonly ILiquidacion _service;
-    private readonly ILogger<LiquidacionController> _logger;
 
-    public LiquidacionController(ILiquidacion service, ILogger<LiquidacionController> logger)
+    public LiquidacionController(ILiquidacion service)
     {
         _service = service;
-        _logger = logger;
     }
 
     [HttpGet("Listar")]
@@ -50,19 +48,20 @@ public class LiquidacionController : ControllerBase
         }
     }
 
-    [HttpDelete("{sot}/delete")]
+    [HttpDelete("{id}/delete")]
     [Authorize(Roles = $"{nameof(Rol.ADMIN)}, {nameof(Rol.ALMACEN)}")] //cualquier usuario autenticado
-    public async Task<IActionResult> EliminarLiquidacion(long sot)
+    public async Task<IActionResult> EliminarLiquidacion(int id)
     {
 
         try{
             // Llamamos al servicio que maneja la lógica
-            await _service.EliminarLiquidacionAsync(sot);
+            await _service.EliminarLiquidacionAsync(id);
             return NoContent();
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { mensaje = "Error interno del servidor al eliminar la liquidación.", error = ex.Message });
+            //_logger.LogError(ex, "Error al intentar eliminar la orden {Id}", id);
+            return StatusCode(500, new { mensaje = "Error interno del servidor al eliminar la orden." });
         }
     }
 
@@ -79,18 +78,9 @@ public class LiquidacionController : ControllerBase
         }
         catch (Exception ex)
         {
-            // 👇 Loguea la excepción completa (con inner exceptions) para verla en la terminal
-            _logger.LogError(ex, "Error al editar la liquidación SOT {Sot}", request.Sot);
-
-            // 👇 En desarrollo, devuelve la cadena completa de inner exceptions al front
-            var detalle = ex.InnerException?.Message ?? ex.Message;
-            return StatusCode(500, new
-            {
-                mensaje = "Error interno del servidor al editar la orden.",
-                error = detalle
-            });
+            //_logger.LogError(ex, "Error al intentar eliminar la orden {Id}", id);
+            return StatusCode(500, new { mensaje = "Error interno del servidor al editar la orden." });
         }
-
     }
 
     // Cruza el Excel de pagos de Claro con las liquidaciones (no guarda)

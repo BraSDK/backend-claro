@@ -13,10 +13,6 @@ public class LiquidacionConfiguration : IEntityTypeConfiguration<Liquidacion>
         builder.HasIndex(l => l.Sot).IsUnique();
         builder.Ignore(l => l.TotalACobrar);   // calculado, no es columna
 
-        builder.Property(l => l.FechaProgramacion)
-               .HasColumnType("timestamp with time zone")
-               .IsRequired();
-
         //relacion con orden trabajo
         builder.HasOne(l => l.OrdenTrabajo)
                .WithOne()

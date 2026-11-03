@@ -36,9 +36,6 @@ public static class DependencyInjection
         services.AddScoped<IAdicionales, AdicionalService>();
         services.AddScoped<ILiquidacion, LiquidacionService>();   // sin esto, todo /api/Liquidacion respondía 500
 
-        // 5. Inyeccion de ILiquidacionService:
-        services.AddScoped<ILiquidacion, LiquidacionService>();
-
         // 5. Configuración JWT
         var jwtSettings = configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"];

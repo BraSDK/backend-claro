@@ -138,9 +138,9 @@ public class LiquidacionService : ILiquidacion
         await _context.SaveChangesAsync();
     }
 
-    public async Task EliminarLiquidacionAsync(long sot)
+    public async Task EliminarLiquidacionAsync(int id)
     {
-        var liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync( l => l.Sot == sot) ?? throw new NotFoundException("Liquidacion no encontrada");
+        var liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync( l => l.Sot == id) ?? throw new NotFoundException("Liquidacion no encontrada"); // id = SOT
         _context.Liquidaciones.Remove(liquidacion);
         await _context.SaveChangesAsync();
     }

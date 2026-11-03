@@ -17,7 +17,6 @@ public class Liquidacion : IAuditable
     public long Sot { get; set; }
     public String? TipoOrden {get; set;}
     public String NombreSubTipoOrden {get; set;} = String.Empty;
-    [Column(TypeName = "timestamp without time zone")]
     public DateTime FechaProgramacion {get; set;}
     public String NombreTecnico {get; set;} = String.Empty;
     public Estados EstadoSistema {get; set;} = Estados.INGRESADA; //EStado en este sistema
