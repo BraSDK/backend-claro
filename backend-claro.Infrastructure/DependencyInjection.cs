@@ -32,6 +32,8 @@ public static class DependencyInjection
         services.AddScoped<IOrdenTrabajoService, OrdenTrabajoService>();
         //services.AddScoped<IImportarOrdenesService, ImportarOrdenesService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IPagoClaroService, PagoClaroService>();
+        services.AddScoped<IReporteService, ReporteService>();
         //services.AddScoped<IConciliacionService, ConciliacionService>();
         services.AddScoped<IAdicionales, AdicionalService>();
         services.AddScoped<ILiquidacion, LiquidacionService>();   // sin esto, todo /api/Liquidacion respondía 500

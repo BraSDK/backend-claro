@@ -56,6 +56,10 @@ public class Liquidacion : IAuditable
     public bool SinPago {get; set;} = false; // Informacion si pago o no
     public DateTime? FechaValidacion {get; set;}  // null = todavía no validada or gerencia
     public int? AuditadoPorCuentaId {get; set;} //usuario admin que lo validó
+
+    // Pago de Claro (lote) en el que se registró esta SOT. null = auditada pero todavía sin pago registrado
+    public int? PagoClaroId {get; set;}
+    public PagoClaro? PagoClaro {get; set;}
     //OBSERVACIONES
 
     public ICollection<ObservacionLiquidacion> Observaciones {get; set;} = new List<ObservacionLiquidacion>();

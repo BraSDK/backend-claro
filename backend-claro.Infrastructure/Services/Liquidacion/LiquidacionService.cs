@@ -197,9 +197,12 @@ public class LiquidacionService : ILiquidacion
                                           .ToDictionaryAsync(l => l.Sot);
 
         var noEncontradas = new List<long>();
+        var enPago = new List<long>();
         foreach (var item in request.Items)
         {
             if (!liquidaciones.TryGetValue(item.Sot, out var l)) { noEncontradas.Add(item.Sot); continue; }
+            // si ya se registró en un pago de Claro, su auditoría queda cerrada (para cambiarla, primero se elimina ese pago)
+            if (l.PagoClaroId != null) { enPago.Add(item.Sot); continue; }
 
             l.EstadoPago = item.EstadoPago;
             l.MontoPagado = item.MontoPagado;
@@ -214,7 +217,12 @@ public class LiquidacionService : ILiquidacion
         }
 
         await _context.SaveChangesAsync();
-        return new AuditarLiquidacionesResponse { Actualizadas = request.Items.Count - noEncontradas.Count, NoEncontradas = noEncontradas };
+        return new AuditarLiquidacionesResponse
+        {
+            Actualizadas = request.Items.Count - noEncontradas.Count - enPago.Count,
+            NoEncontradas = noEncontradas,
+            EnPago = enPago,
+        };
     }
 
     private static EstadoPago SugerirEstado(decimal pagado, decimal total)

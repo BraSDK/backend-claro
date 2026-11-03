@@ -22,6 +22,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Liquidacion> Liquidaciones { get; set; }
     public DbSet<MotivoObservacion> motivos { get; set; }
     public DbSet<ObservacionLiquidacion> Observaciones { get; set; }
+    public DbSet<PagoClaro> PagosClaro { get; set; }
+    public DbSet<MultaClaro> MultasClaro { get; set; }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
