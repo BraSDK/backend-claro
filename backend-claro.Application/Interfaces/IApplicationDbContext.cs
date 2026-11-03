@@ -17,6 +17,8 @@ public interface IApplicationDbContext
     DbSet<MotivoObservacion> motivos {get;set;} // catalogo de motivos para el autocompletado
     DbSet<ObservacionLiquidacion> Observaciones {get;set;}
     DbSet<CostoAdicional> Adicionales {get; set;}
+    DbSet<PagoClaro> PagosClaro {get; set;}
+    DbSet<MultaClaro> MultasClaro {get; set;}
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

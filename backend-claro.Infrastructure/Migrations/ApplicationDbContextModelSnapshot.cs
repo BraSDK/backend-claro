@@ -182,6 +182,9 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<int?>("OrdenTrabajoId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("PagoClaroId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal?>("PrecioTotalEditable")
                         .HasColumnType("decimal(18,2)");
 
@@ -204,6 +207,8 @@ namespace backend_claro.Infrastructure.Migrations
 
                     b.HasIndex("OrdenTrabajoId")
                         .IsUnique();
+
+                    b.HasIndex("PagoClaroId");
 
                     b.HasIndex("Sot")
                         .IsUnique();
@@ -241,6 +246,45 @@ namespace backend_claro.Infrastructure.Migrations
                     b.HasKey("MotivoObservacionId");
 
                     b.ToTable("motivos");
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.MultaClaro", b =>
+                {
+                    b.Property<int>("MultaClaroId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MultaClaroId"));
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaActualizacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("NombreTecnico")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int?>("PagoClaroId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("MultaClaroId");
+
+                    b.HasIndex("PagoClaroId");
+
+                    b.ToTable("MultasClaro");
                 });
 
             modelBuilder.Entity("backend_claro.Domain.Entities.ObservacionLiquidacion", b =>
@@ -354,6 +398,42 @@ namespace backend_claro.Infrastructure.Migrations
                     b.ToTable("Archivos");
                 });
 
+            modelBuilder.Entity("backend_claro.Domain.Entities.PagoClaro", b =>
+                {
+                    b.Property<int>("PagoClaroId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PagoClaroId"));
+
+                    b.Property<string>("Comprobante")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<DateTime>("FechaActualizacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaPago")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Observacion")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int?>("RegistradoPorCuentaId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("PagoClaroId");
+
+                    b.HasIndex("FechaPago");
+
+                    b.ToTable("PagosClaro");
+                });
+
             modelBuilder.Entity("backend_claro.Domain.Entities.Servicio", b =>
                 {
                     b.Property<int>("Codigo")
@@ -436,6 +516,11 @@ namespace backend_claro.Infrastructure.Migrations
                         .HasForeignKey("backend_claro.Domain.Entities.Liquidacion", "OrdenTrabajoId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("backend_claro.Domain.Entities.PagoClaro", "PagoClaro")
+                        .WithMany("Liquidaciones")
+                        .HasForeignKey("PagoClaroId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("backend_claro.Domain.Entities.Usuario", "Usuario")
                         .WithMany()
                         .HasForeignKey("UsuarioId")
@@ -444,7 +529,19 @@ namespace backend_claro.Infrastructure.Migrations
 
                     b.Navigation("OrdenTrabajo");
 
+                    b.Navigation("PagoClaro");
+
                     b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.MultaClaro", b =>
+                {
+                    b.HasOne("backend_claro.Domain.Entities.PagoClaro", "PagoClaro")
+                        .WithMany("Multas")
+                        .HasForeignKey("PagoClaroId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("PagoClaro");
                 });
 
             modelBuilder.Entity("backend_claro.Domain.Entities.ObservacionLiquidacion", b =>
@@ -522,6 +619,13 @@ namespace backend_claro.Infrastructure.Migrations
             modelBuilder.Entity("backend_claro.Domain.Entities.OrdenTrabajo", b =>
                 {
                     b.Navigation("Archivos");
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.PagoClaro", b =>
+                {
+                    b.Navigation("Liquidaciones");
+
+                    b.Navigation("Multas");
                 });
 #pragma warning restore 612, 618
         }
