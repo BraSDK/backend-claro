@@ -18,7 +18,7 @@ public class Liquidacion : IAuditable
     public String? TipoOrden {get; set;}
     public String NombreSubTipoOrden {get; set;} = String.Empty;
     public DateTime FechaProgramacion {get; set;}
-    public String NombreTecnico {get; set;} = String.Empty;
+    public String? NombreTecnico {get; set;} = String.Empty;
     public Estados EstadoSistema {get; set;} = Estados.INGRESADA; //EStado en este sistema
 
     //Precios
@@ -37,8 +37,8 @@ public class Liquidacion : IAuditable
     public OrdenTrabajo? OrdenTrabajo { get; set; }
 
     //Usuario que liquido la sot
-    public int UsuarioId {get; set;}
-    public Usuario Usuario { get; set; } = null!;
+    public int? UsuarioId {get; set;}
+    public Usuario? Usuario { get; set; } = null!;
     public EstadoPago EstadoPago {get; set;} = EstadoPago.Pendiente;
 
     // Lo que Claro pagó por la SOT (del Excel de pagos o escrito a mano en la auditoría)
