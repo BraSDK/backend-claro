@@ -20,13 +20,17 @@ public class CostoAdicional :IAuditable
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal Precio { get; set; } 
-
+    public int Codigo {get; set;}
+    public Servicio? Servicio {get; set;}
     public TipoAdicional Tipo { get; set; }
 
     public string? ColumnaExcel { get; set; } 
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
     public DateTime FechaActualizacion { get; set;} =DateTime.UtcNow;
 
-
+    public void ActualizarPrecio(int precio)
+    {
+        Precio = precio;
+    }
 
 }

@@ -75,6 +75,7 @@ public class LiquidacionService : ILiquidacion
         }
 
         // La SOT no se reasigna: es la clave con la que se encontró el registro
+        liquidacion.ServicioCodigo = request.ServicioCodigo;
         liquidacion.TipoOrden = request.TipoOrden;
         liquidacion.NombreSubTipoOrden = request.NombreSubTipoOrden;
         liquidacion.FechaProgramacion = DateTime.SpecifyKind(request.FechaProgramacion.Date, DateTimeKind.Utc); // Npgsql (timestamptz) solo acepta UTC

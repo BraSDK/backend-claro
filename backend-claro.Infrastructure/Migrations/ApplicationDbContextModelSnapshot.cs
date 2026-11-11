@@ -30,6 +30,9 @@ namespace backend_claro.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AdicionalId"));
 
+                    b.Property<int>("Codigo")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ColumnaExcel")
                         .HasColumnType("text");
 
@@ -46,10 +49,15 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<decimal>("Precio")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("ServicioCodigo")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Tipo")
                         .HasColumnType("integer");
 
                     b.HasKey("AdicionalId");
+
+                    b.HasIndex("ServicioCodigo");
 
                     b.ToTable("Adicionales");
                 });
@@ -96,6 +104,9 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<int>("Cantidad")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("CodigoServicio")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Concepto")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -125,6 +136,8 @@ namespace backend_claro.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("DetalleLiquidacionId");
+
+                    b.HasIndex("CodigoServicio");
 
                     b.HasIndex("CostoAdicionalId");
 
@@ -191,6 +204,9 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<decimal?>("PrecioTotalReal")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("ServicioCodigo")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("SinPago")
                         .HasColumnType("boolean");
 
@@ -209,6 +225,8 @@ namespace backend_claro.Infrastructure.Migrations
                         .IsUnique();
 
                     b.HasIndex("PagoClaroId");
+
+                    b.HasIndex("ServicioCodigo");
 
                     b.HasIndex("Sot")
                         .IsUnique();
@@ -442,6 +460,9 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<int>("Categoria")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime>("FechaActualizacion")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("timestamp with time zone");
 
@@ -452,6 +473,9 @@ namespace backend_claro.Infrastructure.Migrations
 
                     b.Property<decimal>("Precio")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SubTipo")
+                        .HasColumnType("integer");
 
                     b.HasKey("Codigo");
 
@@ -491,8 +515,22 @@ namespace backend_claro.Infrastructure.Migrations
                     b.ToTable("Usuarios");
                 });
 
+            modelBuilder.Entity("backend_claro.Domain.Entities.CostoAdicional", b =>
+                {
+                    b.HasOne("backend_claro.Domain.Entities.Servicio", "Servicio")
+                        .WithMany()
+                        .HasForeignKey("ServicioCodigo");
+
+                    b.Navigation("Servicio");
+                });
+
             modelBuilder.Entity("backend_claro.Domain.Entities.DetalleLiquidacion", b =>
                 {
+                    b.HasOne("backend_claro.Domain.Entities.Servicio", "ServicioDetalle")
+                        .WithMany()
+                        .HasForeignKey("CodigoServicio")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("backend_claro.Domain.Entities.CostoAdicional", "CostoAdicional")
                         .WithMany()
                         .HasForeignKey("CostoAdicionalId")
@@ -507,6 +545,8 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Navigation("CostoAdicional");
 
                     b.Navigation("Liquidacion");
+
+                    b.Navigation("ServicioDetalle");
                 });
 
             modelBuilder.Entity("backend_claro.Domain.Entities.Liquidacion", b =>
@@ -521,6 +561,11 @@ namespace backend_claro.Infrastructure.Migrations
                         .HasForeignKey("PagoClaroId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("backend_claro.Domain.Entities.Servicio", "Servicio")
+                        .WithMany()
+                        .HasForeignKey("ServicioCodigo")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("backend_claro.Domain.Entities.Usuario", "Usuario")
                         .WithMany()
                         .HasForeignKey("UsuarioId")
@@ -530,6 +575,8 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Navigation("OrdenTrabajo");
 
                     b.Navigation("PagoClaro");
+
+                    b.Navigation("Servicio");
 
                     b.Navigation("Usuario");
                 });
