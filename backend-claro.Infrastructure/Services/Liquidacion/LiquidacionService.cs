@@ -225,6 +225,10 @@ public class LiquidacionService : ILiquidacion
             
             // si ya se registró en un pago de Claro, su auditoría queda cerrada (para cambiarla, primero se elimina ese pago)
             if (l.PagoClaroId != null) { enPago.Add(item.Sot); continue; }
+            if (l.EstadoSistema == Estados.RECHAZADA)
+            {
+                l.EstadoSistema = Estados.IMPORTADA;
+            }
 
             l.EstadoPago = item.EstadoPago;
             l.MontoPagado = item.MontoPagado;
@@ -241,7 +245,7 @@ public class LiquidacionService : ILiquidacion
         await _context.SaveChangesAsync();
         return new AuditarLiquidacionesResponse
         {
-            Actualizadas = request.Items.Count - noEncontradas.Count - enPago.Count,
+            Actualizadas = request.Items.Count - nuevasImportadas - enPago.Count,
             NoEncontradas = noEncontradas,
             NuevasImportadas = nuevasImportadas,
             SotsNuevas = sotsNuevas,
@@ -286,10 +290,39 @@ public class LiquidacionService : ILiquidacion
             query = query.Where(o => o.FechaCreacion < hasta);
         }
 
+        if (request.Estado.HasValue)
+        {
+            // Si desde React mandan estado=4, filtra exactamente por RECHAZADA (o el que envíen)
+            query = query.Where(l => l.EstadoSistema == request.Estado.Value);
+        }
+        else
+        {
+            // Si no seleccionaron ningún filtro de estado en React, 
+            // OCULTAMOS las SOTs rechazadas por defecto para mantener limpia la tabla principal.
+            query = query.Where(l => l.EstadoSistema != Estados.RECHAZADA);
+        }
+
         return query;
     }
 
+    public async Task RestaurarEstadoLiquidacionRechazadaAsync(long sot, int cuentaId)
+    {
+        var liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync(l => l.Sot == sot);
 
+        if (liquidacion == null)
+            throw new NotFoundException("La SOT no existe.");
+        
+        if (liquidacion.EstadoSistema != Estados.RECHAZADA)
+        
+            throw new NotFoundException("Solo se pueden restaurar SOTs en estado RECHAZADA.");
+
+        liquidacion.EstadoSistema = Estados.IMPORTADA;
+        
+        liquidacion.FechaValidacion = null;
+        liquidacion.AuditadoPorCuentaId = null;
+
+        await _context.SaveChangesAsync();
+    }
 
     // ===== Precios de los adicionales =====
     // El precio de DECO, REPETIDOR y los DROP no lo decide la grilla: sale del catálogo (api/Adicional).

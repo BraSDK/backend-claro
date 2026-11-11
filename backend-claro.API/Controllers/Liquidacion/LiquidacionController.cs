@@ -122,4 +122,21 @@ public class LiquidacionController : ControllerBase
         }
     }
 
+    [HttpPut("{sot}/restaurar")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)}, {nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> RestaurarLiquidacion(long sot)
+    {
+        try
+        {
+            var usuarioId = User.ObtenerUsuarioId();
+            await _service.RestaurarEstadoLiquidacionRechazadaAsync(sot, usuarioId);
+            return Ok(new { mensaje = "SOT restaurada a Importada correctamente." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message});
+        }
+    }
+
+
 }
