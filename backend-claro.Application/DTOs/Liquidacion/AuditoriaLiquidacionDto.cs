@@ -54,5 +54,8 @@ public class AuditarLiquidacionesResponse
 {
     public int Actualizadas { get; set; }
     public List<long> NoEncontradas { get; set; } = new();
+    public int NuevasImportadas { get; set; }
+    public List<long> SotsNuevas { get; set; } = new();
     public List<long> EnPago { get; set; } = new();   // ya están en un pago de Claro registrado: no se cambian
+    
 }

@@ -189,7 +189,6 @@ namespace backend_claro.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("NombreTecnico")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int?>("OrdenTrabajoId")
@@ -216,7 +215,7 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<string>("TipoOrden")
                         .HasColumnType("text");
 
-                    b.Property<int>("UsuarioId")
+                    b.Property<int?>("UsuarioId")
                         .HasColumnType("integer");
 
                     b.HasKey("LiquidacionId");
@@ -568,9 +567,7 @@ namespace backend_claro.Infrastructure.Migrations
 
                     b.HasOne("backend_claro.Domain.Entities.Usuario", "Usuario")
                         .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UsuarioId");
 
                     b.Navigation("OrdenTrabajo");
 

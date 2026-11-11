@@ -100,4 +100,43 @@ public class LiquidacionController : ControllerBase
         return Ok(await _service.AuditarAsync(request, usuarioId));
     }
 
+    [HttpPut("{sot}/estado-importacion")]
+    [Authorize (Roles = $"{nameof(Rol.ADMIN)}, {nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> CambiarEstadoImportacion(long sot, bool aprobar, int cuentaId){
+        try
+        {
+            //Obetenemos el ID del usuario logueado (el encargado que toma la decision)
+            var usuarioId = User.ObtenerUsuarioId();
+
+            // Llamamos al servicio
+            await _service.CambiarEstadoImportacionAsync(sot, aprobar, cuentaId);
+            return Ok(new { mensaje = aprobar ? "SOT aprobada correctamente" : "SOT rechazada correctamente."});
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "Error interno al procesar la solicitud.", ex });
+        }
+    }
+
+    [HttpPut("{sot}/restaurar")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)}, {nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> RestaurarLiquidacion(long sot)
+    {
+        try
+        {
+            var usuarioId = User.ObtenerUsuarioId();
+            await _service.RestaurarEstadoLiquidacionRechazadaAsync(sot, usuarioId);
+            return Ok(new { mensaje = "SOT restaurada a Importada correctamente." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message});
+        }
+    }
+
+
 }

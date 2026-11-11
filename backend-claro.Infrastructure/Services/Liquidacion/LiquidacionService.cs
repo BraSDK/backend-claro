@@ -199,11 +199,37 @@ public class LiquidacionService : ILiquidacion
 
         var noEncontradas = new List<long>();
         var enPago = new List<long>();
+        var sotsNuevas = new List<long>();
+        int nuevasImportadas = 0;
+
         foreach (var item in request.Items)
         {
-            if (!liquidaciones.TryGetValue(item.Sot, out var l)) { noEncontradas.Add(item.Sot); continue; }
+            if (!liquidaciones.TryGetValue(item.Sot, out var l))
+            {
+                var nuevaLiquidacion = new Liquidacion
+                {
+                    Sot = item.Sot,
+                    EstadoSistema = Estados.IMPORTADA,
+                    MontoPagado = item.MontoPagado,
+                    EstadoPago = item.EstadoPago,
+                    PrecioTotalEditable = item.PrecioTotalEditable,
+                    FechaValidacion = item.EstadoPago == EstadoPago.Pendiente ? null : DateTime.UtcNow,
+                    AuditadoPorCuentaId = item.EstadoPago == EstadoPago.Pendiente ? null : cuentaId, 
+                    UsuarioId = cuentaId
+                };
+
+                _context.Liquidaciones.Add(nuevaLiquidacion);
+                nuevasImportadas++;
+                sotsNuevas.Add(item.Sot);
+                continue;
+            }
+            
             // si ya se registró en un pago de Claro, su auditoría queda cerrada (para cambiarla, primero se elimina ese pago)
             if (l.PagoClaroId != null) { enPago.Add(item.Sot); continue; }
+            if (l.EstadoSistema == Estados.RECHAZADA)
+            {
+                l.EstadoSistema = Estados.IMPORTADA;
+            }
 
             l.EstadoPago = item.EstadoPago;
             l.MontoPagado = item.MontoPagado;
@@ -220,8 +246,10 @@ public class LiquidacionService : ILiquidacion
         await _context.SaveChangesAsync();
         return new AuditarLiquidacionesResponse
         {
-            Actualizadas = request.Items.Count - noEncontradas.Count - enPago.Count,
+            Actualizadas = request.Items.Count - nuevasImportadas - enPago.Count,
             NoEncontradas = noEncontradas,
+            NuevasImportadas = nuevasImportadas,
+            SotsNuevas = sotsNuevas,
             EnPago = enPago,
         };
     }
@@ -263,10 +291,39 @@ public class LiquidacionService : ILiquidacion
             query = query.Where(o => o.FechaCreacion < hasta);
         }
 
+        if (request.Estado.HasValue)
+        {
+            // Si desde React mandan estado=4, filtra exactamente por RECHAZADA (o el que envíen)
+            query = query.Where(l => l.EstadoSistema == request.Estado.Value);
+        }
+        else
+        {
+            // Si no seleccionaron ningún filtro de estado en React, 
+            // OCULTAMOS las SOTs rechazadas por defecto para mantener limpia la tabla principal.
+            query = query.Where(l => l.EstadoSistema != Estados.RECHAZADA);
+        }
+
         return query;
     }
 
+    public async Task RestaurarEstadoLiquidacionRechazadaAsync(long sot, int cuentaId)
+    {
+        var liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync(l => l.Sot == sot);
 
+        if (liquidacion == null)
+            throw new NotFoundException("La SOT no existe.");
+        
+        if (liquidacion.EstadoSistema != Estados.RECHAZADA)
+        
+            throw new NotFoundException("Solo se pueden restaurar SOTs en estado RECHAZADA.");
+
+        liquidacion.EstadoSistema = Estados.IMPORTADA;
+        
+        liquidacion.FechaValidacion = null;
+        liquidacion.AuditadoPorCuentaId = null;
+
+        await _context.SaveChangesAsync();
+    }
 
     // ===== Precios de los adicionales =====
     // El precio de DECO, REPETIDOR y los DROP no lo decide la grilla: sale del catálogo (api/Adicional).
@@ -307,6 +364,29 @@ public class LiquidacionService : ILiquidacion
             liquidacion.FechaValidacion = null;
             liquidacion.AuditadoPorCuentaId = null;
         }
+    }
+
+    public async Task CambiarEstadoImportacionAsync(long sot, bool aprobar, int cuentaId)
+    {
+        // 1. Buscamos la liquidacion por su SOT
+        var liquidacion = await _context.Liquidaciones
+                                        .FirstOrDefaultAsync(l => l.Sot ==sot);
+        if (liquidacion == null)
+            throw new NotFoundException("La SOT no existe en el sistema");
+
+        // 2. Validamos que este en estado IMPORTADA (3)
+        if (liquidacion.EstadoSistema != Estados.IMPORTADA)
+            throw new InvalidOperationException("Solo se pueden confirmar o rechazar SOTs en estado IMPORTADA");
+
+        // 3. Cambiamos el estado segun la decisión
+        liquidacion.EstadoSistema = aprobar ? Estados.LIQUIDADO : Estados.RECHAZADA;
+
+        // 4. Registramos la autoria (quien y cuándo)
+        liquidacion.AuditadoPorCuentaId = cuentaId;
+        liquidacion.FechaValidacion = DateTime.UtcNow;
+
+        // 5. Guardamos los cambios en la BD
+        await _context.SaveChangesAsync();
     }
 
     private static bool TieneObservacionNoPago(Liquidacion liquidacion) =>
