@@ -6,6 +6,7 @@ namespace backend_claro.Domain.Entities;
 
 public class DetalleLiquidacion:IAuditable
 {
+
     [Key]
     public int DetalleLiquidacionId {get; set;}
     //dueño del detalle
@@ -26,6 +27,8 @@ public class DetalleLiquidacion:IAuditable
     public decimal PrecioTotal {get; set;}
 
     public TipoDetalle Tipo {get; set;} 
+    public int? CodigoServicio {get; set;}
+    public Servicio? ServicioDetalle {get; set;}
     
     public DateTime FechaActualizacion { get ; set; } = DateTime.UtcNow;
     public DateTime FechaCreacion {get; set;} = DateTime.UtcNow;

@@ -9,8 +9,9 @@ public static class AdicionalMapper
     {
         return new CostoAdicional
         {
+
             Nombre = request.Nombre,
-            Precio = request.Precio,
+            Codigo = request.Codigo,
             Tipo = request.Tipo,
             ColumnaExcel = request.ColumnaExcel ?? String.Empty
 
@@ -22,6 +23,7 @@ public static class AdicionalMapper
         return new RequestAdicionalDto
         {
             Nombre = request.Nombre,
+            Codigo = request.Codigo,
             Precio = request.Precio,
             Tipo = request.Tipo,
             ColumnaExcel = request.ColumnaExcel ?? String.Empty

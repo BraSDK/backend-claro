@@ -13,7 +13,8 @@ public static class ServiceMapper
             Codigo = s.Codigo,
             Nombre = s.Nombre,
             Precio = s.Precio,
-            Categoria = s.Categoria.ToString() // Convierte el Enum a texto
+            Categoria = s.Categoria.ToString(),
+            SubTipoServicio = s.SubTipo.ToString()// Convierte el Enum a texto
         });
     }
 
@@ -26,6 +27,7 @@ public static class ServiceMapper
             Nombre = request.Nombre,
             Precio = request.Precio,
             Categoria = request.Categoria,
+            SubTipo = request.SubTipoServicio,
             FechaCreacion = DateTime.UtcNow
         };
     }
@@ -37,6 +39,7 @@ public static class ServiceMapper
             servicioExistente.Nombre = request.Nombre;
             servicioExistente.Precio = request.Precio;
             servicioExistente.Categoria = request.Categoria;
+            servicioExistente.SubTipo = request.SubTipo;
         };
     }
 
@@ -48,7 +51,8 @@ public static class ServiceMapper
             Codigo = entidad.Codigo,
             Nombre = entidad.Nombre,
             Precio = entidad.Precio,
-            Categoria = entidad.Categoria.ToString()
+            Categoria = entidad.Categoria.ToString(),
+            SubTipoServicio = entidad.SubTipo.ToString()
         };
     }
 }

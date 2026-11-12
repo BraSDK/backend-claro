@@ -23,6 +23,12 @@ public class LiquidacionConfiguration : IEntityTypeConfiguration<Liquidacion>
                .WithOne( l => l.Liquidacion)
                .HasForeignKey(d => d.LiquidacionId)
                .OnDelete(DeleteBehavior.Cascade);
+               
+        builder.HasOne(l => l.Servicio)
+               .WithMany()
+               .HasForeignKey(l => l.ServicioCodigo)
+               .OnDelete(DeleteBehavior.Restrict);
+        
 
     }        
 }

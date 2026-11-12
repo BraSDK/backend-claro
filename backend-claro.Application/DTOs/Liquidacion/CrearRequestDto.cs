@@ -13,6 +13,7 @@ public class CrearLiquidacionRequest
     public DateTime FechaProgramacion {get; set;}
     public String? NombreTecnico {get; set;} = String.Empty;
     public Estados EstadoSistema {get; set;} = Estados.INGRESADA;
+    public int? ServicioCodigo {get; set;}
     public List<CrearDetalleRequest> Detalles {get; set;} = new List<CrearDetalleRequest>();
     public String? EstadoSot {get; set;} = String.Empty;
     public int? OrdenTrabajoId { get; set; }

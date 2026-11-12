@@ -14,6 +14,7 @@ public class EditarLiquidacionRequestDto
     public DateTime FechaProgramacion {get; set;}
     public String? NombreTecnico {get; set;} = String.Empty;
     public Estados EstadoSistema {get; set;} = Estados.INGRESADA;
+    public int ServicioCodigo {get; set;} 
     public List<CrearDetalleRequest> DetallesNuevos { get; set; } = new(); // vacío = nada editado nada nuevo
     public List<EditarDetalleRequest> DetallesEditados { get; set; } = new();       // vacío = nada editado
     public List<int> DetallesEliminados { get; set; } = new();               // vacío = nada eliminado

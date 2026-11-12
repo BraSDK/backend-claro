@@ -22,6 +22,10 @@ public class Liquidacion : IAuditable
     public Estados EstadoSistema {get; set;} = Estados.INGRESADA; //EStado en este sistema
 
     //Precios
+
+    //codigo de servicio que se liquidó
+    public int? ServicioCodigo {get; set;}
+    public Servicio? Servicio {get; set;} //relacion con el servicio
     public ICollection<DetalleLiquidacion> Detalles {get; set;} = new List<DetalleLiquidacion>();
 
     [Column(TypeName = "decimal(18,2)")]
