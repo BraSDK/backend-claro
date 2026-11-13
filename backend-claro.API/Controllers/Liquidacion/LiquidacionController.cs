@@ -14,10 +14,12 @@ namespace backend_claro.API.Controllers;
 public class LiquidacionController : ControllerBase
 {
     private readonly ILiquidacion _service;
+    private readonly ILogger<LiquidacionController> _logger;
 
-    public LiquidacionController(ILiquidacion service)
+    public LiquidacionController(ILiquidacion service, ILogger<LiquidacionController> logger)
     {
         _service = service;
+        _logger = logger;
     }
 
     [HttpGet("Listar")]
@@ -61,7 +63,7 @@ public class LiquidacionController : ControllerBase
         catch (Exception ex)
         {
             //_logger.LogError(ex, "Error al intentar eliminar la orden {Id}", id);
-            return StatusCode(500, new { mensaje = "Error interno del servidor al eliminar la orden." });
+            return StatusCode(500, new { mensaje = "Error interno del servidor al eliminar la orden.", ex });
         }
     }
 
@@ -78,7 +80,7 @@ public class LiquidacionController : ControllerBase
         }
         catch (Exception ex)
         {
-            //_logger.LogError(ex, "Error al intentar eliminar la orden {Id}", id);
+            _logger.LogError(ex, "Error al intentar eliminar la orden {Id}", request.LiquidacionId);
             return StatusCode(500, new { mensaje = "Error interno del servidor al editar la orden." });
         }
     }

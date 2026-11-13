@@ -75,7 +75,17 @@ public class LiquidacionService : ILiquidacion
         }
 
         // La SOT no se reasigna: es la clave con la que se encontró el registro
-        liquidacion.ServicioCodigo = request.ServicioCodigo;
+        if (request.ServicioCodigo.HasValue && request.ServicioCodigo > 0)
+{
+            var existeServicio = await _context.Servicios
+                .AnyAsync(s => s.Codigo == request.ServicioCodigo.Value);
+
+            if (!existeServicio)
+                throw new ArgumentException(
+                    $"El ServicioCodigo {request.ServicioCodigo} no existe en Servicios.");
+
+            liquidacion.ServicioCodigo = request.ServicioCodigo.Value;
+        }
         liquidacion.TipoOrden = request.TipoOrden;
         liquidacion.NombreSubTipoOrden = request.NombreSubTipoOrden;
         liquidacion.FechaProgramacion = DateTime.SpecifyKind(request.FechaProgramacion.Date, DateTimeKind.Utc); // Npgsql (timestamptz) solo acepta UTC
