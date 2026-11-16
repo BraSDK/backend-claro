@@ -15,4 +15,5 @@ public interface ILiquidacion
     Task<AuditarLiquidacionesResponse> AuditarAsync(AuditarLiquidacionesRequest request, int cuentaId);
     Task CambiarEstadoImportacionAsync(long sot, bool aprobar, int cuentaId);
     Task RestaurarEstadoLiquidacionRechazadaAsync(long sot, int usuarioId);
+    Task<int> EliminarImportadasAsync();
 }

@@ -140,5 +140,20 @@ public class LiquidacionController : ControllerBase
         }
     }
 
+    [HttpDelete("EliminarImportadas")]
+    [Authorize(Roles = nameof(Rol.ADMIN))]   // solo admin
+    public async Task<IActionResult> EliminarImportadas()
+    {
+        try
+        {
+            var eliminadas = await _service.EliminarImportadasAsync();
+            return Ok(new { eliminadas, mensaje = $"Se eliminaron {eliminadas} SOTs importadas." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al eliminar SOTs importadas");
+            return StatusCode(500, new { mensaje = "Error al eliminar SOTs importadas." });
+        }
+    }
 
 }
