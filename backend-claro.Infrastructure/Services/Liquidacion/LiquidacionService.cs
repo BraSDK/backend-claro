@@ -263,6 +263,16 @@ public class LiquidacionService : ILiquidacion
                                           .Where(l => sots.Contains(l.Sot))
                                           .ToDictionaryAsync(l => l.Sot);
 
+        var (anio, mes) = Hoja.PeriodoDe(DateTime.UtcNow);
+        var hojaActual = await _context.Hojas
+            .FirstOrDefaultAsync(h => h.Anio == anio && h.Mes ==mes);
+
+        if (hojaActual is null)
+        {
+            hojaActual = Hoja.NuevaParaPeriodo(anio, mes);
+            _context.Hojas.Add(hojaActual);
+        }
+
         var noEncontradas = new List<long>();
         var enPago = new List<long>();
         var sotsNuevas = new List<long>();
@@ -288,8 +298,17 @@ public class LiquidacionService : ILiquidacion
                     SinPago = item.EstadoPago == EstadoPago.NoPagara,
                     FechaValidacion = item.EstadoPago == EstadoPago.Pendiente ? null : DateTime.UtcNow,
                     AuditadoPorCuentaId = item.EstadoPago == EstadoPago.Pendiente ? null : cuentaId, 
-                    UsuarioId = usuarioId          
+                    UsuarioId = usuarioId,
+                    Hoja = hojaActual
                 };
+
+                if (tieneRechazoExcel)
+                {
+                    nuevaLiquidacion.AgregarObservacion(new ObservacionLiquidacion{
+                       Tipo = TipoObservacion.NO_PAGO,
+                       Texto = item.ObservacionExcel 
+                    });
+                }
 
                 _context.Liquidaciones.Add(nuevaLiquidacion);
                 nuevasImportadas++;
