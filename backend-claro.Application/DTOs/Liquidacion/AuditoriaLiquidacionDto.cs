@@ -7,6 +7,9 @@ public class FilaPagoExcel
 {
     public long Sot { get; set; }
     public decimal MontoPagado { get; set; }
+    public string? MesPago { get; set; }
+    public string? SemanaPago { get; set; }
+    public string? Observacion { get; set; }
 }
 
 public class PrevisualizarAuditoriaRequest
@@ -19,12 +22,16 @@ public class FilaAuditoriaPreview
     public long Sot { get; set; }
     public bool Existe { get; set; }                 // false = la SOT está en el Excel pero no en el sistema
     public string? NombreTecnico { get; set; }
+    public int? CodigoServicio { get; set; }
     public decimal? PrecioTotalReal { get; set; }
     public decimal? PrecioTotalEditable { get; set; }
     public decimal TotalACobrar { get; set; }        // editado ?? calculado
     public decimal MontoPagado { get; set; }
     public decimal Diferencia { get; set; }          // pagado - total (negativo = pagaron menos)
     public int FilasEnExcel { get; set; }            // > 1 = se sumaron pagos de varias filas
+    public string? MesPago { get; set; }
+    public string? SemanaPago { get; set; }
+    public string? ObservacionExcel { get; set; }
     public EstadoPago EstadoActual { get; set; }
     public EstadoPago EstadoSugerido { get; set; }
 }
@@ -42,7 +49,10 @@ public class AuditarLiquidacionItem
     public long Sot { get; set; }
     public EstadoPago EstadoPago { get; set; }
     public decimal? MontoPagado { get; set; }
-    public decimal? PrecioTotalEditable { get; set; }   // null = se cobra el precio calculado
+    public decimal? PrecioTotalEditable { get; set; }   
+    public string? MesPago { get; set; }
+    public string? SemanaPago { get; set; }
+    public string? ObservacionExcel { get; set; }
 }
 
 public class AuditarLiquidacionesRequest

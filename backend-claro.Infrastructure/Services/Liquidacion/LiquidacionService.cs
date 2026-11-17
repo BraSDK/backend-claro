@@ -24,6 +24,18 @@ public class LiquidacionService : ILiquidacion
     
         query = AplicarFiltros(query,request);
 
+        if (!string.IsNullOrWhiteSpace(request.MesPago))
+        {
+            var mes = request.MesPago.Trim();
+            query = query.Where(l => l.MesPago == mes);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SemanaPago))
+        {
+            var semana = request.SemanaPago.Trim().ToUpperInvariant();
+            query = query.Where(l => l.SemanaPago == semana);
+        }
+
         var totalRegistros = await query.CountAsync();
 
         var listaLiquidaciones  = await query.AsNoTracking()
@@ -82,6 +94,17 @@ public class LiquidacionService : ILiquidacion
 
         // La SOT no se reasigna: es la clave con la que se encontró el registro
         liquidacion.ServicioCodigo = request.ServicioCodigo is > 0 ? request.ServicioCodigo : null;   // celda vacía ("" → 0) = sin servicio
+        if (request.ServicioCodigo.HasValue && request.ServicioCodigo > 0)
+{
+            var existeServicio = await _context.Servicios
+                .AnyAsync(s => s.Codigo == request.ServicioCodigo.Value);
+
+            if (!existeServicio)
+                throw new ArgumentException(
+                    $"El ServicioCodigo {request.ServicioCodigo} no existe en Servicios.");
+
+            liquidacion.ServicioCodigo = request.ServicioCodigo.Value;
+        }
         liquidacion.TipoOrden = request.TipoOrden;
         liquidacion.NombreSubTipoOrden = request.NombreSubTipoOrden;
         liquidacion.FechaProgramacion = DateTime.SpecifyKind(request.FechaProgramacion.Date, DateTimeKind.Utc); // Npgsql (timestamptz) solo acepta UTC
@@ -148,20 +171,26 @@ public class LiquidacionService : ILiquidacion
         await _context.SaveChangesAsync();
     }
 
-    public async Task EliminarLiquidacionAsync(int id)
-    {
-        var liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync( l => l.Sot == id) ?? throw new NotFoundException("Liquidacion no encontrada"); // id = SOT
-        _context.Liquidaciones.Remove(liquidacion);
-        await _context.SaveChangesAsync();
-    }
     // Cruza las filas del Excel de Claro con las liquidaciones por SOT. No guarda nada.
     public async Task<PrevisualizarAuditoriaResponse> PrevisualizarAuditoriaAsync(PrevisualizarAuditoriaRequest request)
     {
+        // LOG 1: qué llega del front
+        Console.WriteLine($"[PREVIEW-IN] Filas recibidas={request.Filas.Count}, " +
+                      $"SOTs únicas={request.Filas.Where(f => f.Sot > 0).Select(f => f.Sot).Distinct().Count()}, " +
+                      $"Primera fila={System.Text.Json.JsonSerializer.Serialize(request.Filas.FirstOrDefault())}");
         // una SOT puede venir en varias filas (pagos parciales): se suman
         var pagos = request.Filas
             .Where(f => f.Sot > 0)
             .GroupBy(f => f.Sot)
-            .ToDictionary(g => g.Key, g => (Monto: g.Sum(f => f.MontoPagado), Filas: g.Count()));
+            .ToDictionary(g => g.Key, g => (
+                Monto: g.Sum(f => f.MontoPagado),
+                Filas: g.Count(),
+                MesPago: g.Select(f => f.MesPago?.Trim()).FirstOrDefault(x => !string.IsNullOrEmpty(x)),
+                SemanaPago: g.Select(f => f.SemanaPago?.Trim().ToUpperInvariant()).FirstOrDefault(x => !string.IsNullOrEmpty(x)),
+                Observacion: string.Join(" | ", g.Select(f => f.Observacion?.Trim())
+                                              .Where(x => !string.IsNullOrEmpty(x))
+                                              .Distinct(StringComparer.OrdinalIgnoreCase))
+                ));
 
         var sots = pagos.Keys.ToList();
         var liquidaciones = await _context.Liquidaciones.AsNoTracking()
@@ -172,30 +201,57 @@ public class LiquidacionService : ILiquidacion
         {
             liquidaciones.TryGetValue(p.Key, out var l);
             var total = l?.TotalACobrar ?? 0;
+            var obs = string.IsNullOrWhiteSpace(p.Value.Observacion) ? null : p.Value.Observacion;
+
             return new FilaAuditoriaPreview
             {
                 Sot = p.Key,
                 Existe = l is not null,
                 NombreTecnico = l?.NombreTecnico,
+                CodigoServicio = l?.ServicioCodigo,
                 PrecioTotalReal = l?.PrecioTotalReal,
                 PrecioTotalEditable = l?.PrecioTotalEditable,
                 TotalACobrar = total,
                 MontoPagado = p.Value.Monto,
                 Diferencia = p.Value.Monto - total,
                 FilasEnExcel = p.Value.Filas,
+                MesPago = p.Value.MesPago,
+                SemanaPago = p.Value.SemanaPago,
+                ObservacionExcel = obs,
                 EstadoActual = l?.EstadoPago ?? EstadoPago.Pendiente,
-                EstadoSugerido = SugerirEstado(p.Value.Monto, total),
+                EstadoSugerido = SugerirEstado(p.Value.Monto, total, obs),
             };
         })
         .OrderBy(f => f.Existe).ThenBy(f => f.Sot)   // primero las que no existen, para que se vean
         .ToList();
-
-        return new PrevisualizarAuditoriaResponse
+        
+        var response = new PrevisualizarAuditoriaResponse
         {
             Filas = filas,
             Encontradas = filas.Count(f => f.Existe),
             NoEncontradas = filas.Count(f => !f.Existe),
         };
+
+        // LOG 2: qué sale hacia el front
+        Console.WriteLine($"[PREVIEW-OUT] Encontradas={response.Encontradas}, " +
+                          $"NoEncontradas={response.NoEncontradas}, " +
+                          $"Primera fila={System.Text.Json.JsonSerializer.Serialize(response.Filas.FirstOrDefault())}");
+
+        return response;
+    }
+
+    private static bool EsOkPago(string? observacion) =>
+    !string.IsNullOrWhiteSpace(observacion) &&
+    observacion.Contains("OK PAGO", StringComparison.OrdinalIgnoreCase);
+
+    private static EstadoPago SugerirEstado(decimal pagado, decimal total, string? observacion = null)
+    {
+        if(!string.IsNullOrWhiteSpace(observacion) && !EsOkPago(observacion))
+            return EstadoPago.NoPagara;
+
+        if (pagado <= 0) return EstadoPago.NoPagara;
+        if (pagado >= total - 0.01m) return EstadoPago.SiPago;   // tolerancia de redondeo
+        return EstadoPago.Incompleto;
     }
 
     // Guarda estado, monto pagado y precio editado. Lo usan la grilla (edición / pegado masivo) y el Confirmar del Excel.
@@ -203,6 +259,7 @@ public class LiquidacionService : ILiquidacion
     {
         var sots = request.Items.Select(i => i.Sot).Distinct().ToList();
         var liquidaciones = await _context.Liquidaciones
+                                          .Include(l => l.Observaciones)
                                           .Where(l => sots.Contains(l.Sot))
                                           .ToDictionaryAsync(l => l.Sot);
 
@@ -211,8 +268,12 @@ public class LiquidacionService : ILiquidacion
         var sotsNuevas = new List<long>();
         int nuevasImportadas = 0;
 
+        var usuarioId = await UsuarioDeCuentaAsync(cuentaId);
+
         foreach (var item in request.Items)
         {
+            bool tieneRechazoExcel = !string.IsNullOrWhiteSpace(item.ObservacionExcel) && !EsOkPago(item.ObservacionExcel);
+
             if (!liquidaciones.TryGetValue(item.Sot, out var l))
             {
                 var nuevaLiquidacion = new Liquidacion
@@ -222,12 +283,13 @@ public class LiquidacionService : ILiquidacion
                     MontoPagado = item.MontoPagado,
                     EstadoPago = item.EstadoPago,
                     PrecioTotalEditable = item.PrecioTotalEditable,
+                    MesPago = item.MesPago,
+                    SemanaPago = item.SemanaPago,
+                    SinPago = item.EstadoPago == EstadoPago.NoPagara,
                     FechaValidacion = item.EstadoPago == EstadoPago.Pendiente ? null : DateTime.UtcNow,
                     AuditadoPorCuentaId = item.EstadoPago == EstadoPago.Pendiente ? null : cuentaId, 
-                    UsuarioId = cuentaId
+                    UsuarioId = usuarioId          
                 };
-                // la SOT que llega por el Excel y no existía también cae en la hoja de su mes de creación
-                nuevaLiquidacion.Hoja = await _hojas.HojaDelMesAsync(nuevaLiquidacion.FechaCreacion);
 
                 _context.Liquidaciones.Add(nuevaLiquidacion);
                 nuevasImportadas++;
@@ -246,6 +308,29 @@ public class LiquidacionService : ILiquidacion
             l.MontoPagado = item.MontoPagado;
             l.PrecioTotalEditable = item.PrecioTotalEditable;   // null = se cobra el calculado
             l.SinPago = item.EstadoPago == EstadoPago.NoPagara;
+
+            // Solo sobrescribe Mes/Semana si vienen desde el Excel (no si se editó a mano en la grilla)
+            if (!string.IsNullOrWhiteSpace(item.MesPago)) l.MesPago = item.MesPago.Trim();
+            if (!string.IsNullOrWhiteSpace(item.SemanaPago)) l.SemanaPago = item.SemanaPago.Trim().ToUpperInvariant();
+
+            // Si viene observación de rechazo en el Excel, se registra/actualiza en Observaciones (NO_PAGO)
+            if (tieneRechazoExcel)
+            {
+                var obsNoPago = l.Observaciones.FirstOrDefault(o => o.Tipo == TipoObservacion.NO_PAGO);
+                if (obsNoPago is null)
+                {
+                    l.AgregarObservacion(new ObservacionLiquidacion
+                    {
+                        Tipo = TipoObservacion.NO_PAGO,
+                        Texto = item.ObservacionExcel
+                    });
+                }
+                else
+                {
+                    obsNoPago.EditarObservacion(obsNoPago.MotivoObservacionId, item.ObservacionExcel);
+                }
+            }
+
             if (l.PrecioTotalEditable.HasValue) l.InsertarDiferencia(); else l.Descuento = 0;
 
             // Pendiente = sin auditar; cualquier otro estado deja registro de quién y cuándo
@@ -263,13 +348,6 @@ public class LiquidacionService : ILiquidacion
             SotsNuevas = sotsNuevas,
             EnPago = enPago,
         };
-    }
-
-    private static EstadoPago SugerirEstado(decimal pagado, decimal total)
-    {
-        if (pagado <= 0) return EstadoPago.NoPagara;
-        if (pagado >= total - 0.01m) return EstadoPago.SiPago;   // tolerancia de redondeo
-        return EstadoPago.Incompleto;
     }
 
     private static IQueryable<Liquidacion> AplicarFiltros(IQueryable<Liquidacion> query, ListParamsLiquidacionesDto request)
@@ -420,5 +498,27 @@ public class LiquidacionService : ILiquidacion
 
     private async Task<int?> UsuarioDeCuentaAsync(int cuentaId) =>
         await _context.Usuarios.Where(u => u.AuthId == cuentaId).Select(u => (int?)u.Id).FirstOrDefaultAsync();
+
+    public async Task EliminarLiquidacionAsync(int id)
+    {
+        var liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync( l => l.Sot == id) ?? throw new NotFoundException("Liquidacion no encontrada"); // id = SOT
+        _context.Liquidaciones.Remove(liquidacion);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<int> EliminarImportadasAsync()
+    {
+        var aEliminar = await _context.Liquidaciones
+            .Include(l => l.Detalles)
+            .Include(l => l.Observaciones)
+            .Where(l => l.EstadoSistema == Estados.IMPORTADA)
+            .ToListAsync();
+
+        if (aEliminar.Count == 0) return 0;
+
+        _context.Liquidaciones.RemoveRange(aEliminar);
+        await _context.SaveChangesAsync();
+        return aEliminar.Count;
+    }
 }
 

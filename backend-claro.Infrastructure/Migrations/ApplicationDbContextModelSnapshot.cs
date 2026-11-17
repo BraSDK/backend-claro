@@ -220,6 +220,10 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<int>("HojaId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("MesPago")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
                     b.Property<decimal?>("MontoPagado")
                         .HasColumnType("decimal(18,2)");
 
@@ -241,6 +245,10 @@ namespace backend_claro.Infrastructure.Migrations
 
                     b.Property<decimal?>("PrecioTotalReal")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("SemanaPago")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<int?>("ServicioCodigo")
                         .HasColumnType("integer");

@@ -183,20 +183,11 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         
         if (Liquidacion is not null)
         {
-            Console.WriteLine("############################");
-            Console.WriteLine("############################");
-            Console.WriteLine("############################");
-            Console.WriteLine(request.Observacion);
-            Console.WriteLine("############################");
-            Console.WriteLine("############################");
-            Console.WriteLine("############################");
-            Console.WriteLine("############################");
-            Console.WriteLine("############################");
             Liquidacion.AgregarObservacion(new ObservacionLiquidacion
                 {
                     LiquidacionId = Liquidacion.LiquidacionId,
                     Tipo = TipoObservacion.FOTOS ,     // lo asigna el sistema, no el usuario
-                    Texto = request.Observacion,
+                    Texto = request.Observacion ?? "",
                     UsuarioId = idUsuario
                 }
             );

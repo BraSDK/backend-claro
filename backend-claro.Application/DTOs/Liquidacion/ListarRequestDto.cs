@@ -7,7 +7,7 @@ namespace backend_claro.Application.DTOs.Liquidaciones;
 public class ListarRequestLiquidacionesDto
 {
     public int liquidacionId {get; set;}
-    public int Sot {get; set;}
+    public long Sot {get; set;}
     public String? TipoOrden {get; set;}
     public String NombreSubTipoOrden {get; set;} = String.Empty;
     public DateTime FechaProgramacion {get; set;}
@@ -20,6 +20,8 @@ public class ListarRequestLiquidacionesDto
     public decimal? PrecioTotalEditable {get; set;} //para guardar lo del campo editado en el excel
     public decimal? PrecioTotalReal {get; set;}      // calculado por el sistema (suma de detalles)
     public decimal? MontoPagado {get; set;}          // lo que pagó Claro
+    public string? MesPago { get; set; }
+    public string? SemanaPago { get; set; }
     public EstadoPago EstadoPago {get; set;}
     public DateTime? FechaValidacion {get; set;}     // null = sin auditar
     public List<ObservacionResponseDto> Observaciones {get; set;} = new();

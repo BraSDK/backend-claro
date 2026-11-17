@@ -26,8 +26,8 @@ public static class LiquidacionMapper
     {
         return new ListarRequestLiquidacionesDto
         {
-            liquidacionId = (int) request.LiquidacionId,
-            Sot =  (int) request.Sot,
+            liquidacionId = request.LiquidacionId,
+            Sot = request.Sot,
             TipoOrden = request.TipoOrden,
             NombreSubTipoOrden = request.NombreSubTipoOrden,
             FechaProgramacion = request.FechaProgramacion,
@@ -40,6 +40,8 @@ public static class LiquidacionMapper
             PrecioTotalEditable = request.PrecioTotalEditable,
             PrecioTotalReal = request.PrecioTotalReal,
             MontoPagado = request.MontoPagado,
+            MesPago = request.MesPago,
+            SemanaPago = request.SemanaPago,
             EstadoPago = request.EstadoPago,
             FechaValidacion = request.FechaValidacion,
             Observaciones = request.Observaciones.Select(o => new ObservacionResponseDto

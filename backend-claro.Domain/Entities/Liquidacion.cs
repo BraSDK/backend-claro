@@ -61,6 +61,12 @@ public class Liquidacion : IAuditable
     public DateTime? FechaValidacion {get; set;}  // null = todavía no validada or gerencia
     public int? AuditadoPorCuentaId {get; set;} //usuario admin que lo validó
 
+    [MaxLength(10)]
+    public string? MesPago { get; set; }      // Ej: "202611"
+
+    [MaxLength(10)]
+    public string? SemanaPago { get; set; }   // Ej: "S1", "S2", "S3", "S4"
+
     // Pago de Claro (lote) en el que se registró esta SOT. null = auditada pero todavía sin pago registrado
     public int? PagoClaroId {get; set;}
     public PagoClaro? PagoClaro {get; set;}
