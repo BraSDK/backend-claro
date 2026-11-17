@@ -5,6 +5,7 @@ using backend_claro.Application.DTOs.Liquidaciones;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using backend_claro.Api.Extensions;
+using backend_claro.Domain.Exceptions;
 
 namespace backend_claro.API.Controllers;
 
@@ -75,6 +76,11 @@ public class LiquidacionController : ControllerBase
             await _service.EditarLiquidacionAsync(request , usuarioId);
             // 204 No Content es el estándar profesional para un DELETE exitoso
             return Ok();
+        }
+        catch (NotFoundException ex)
+        {
+            // ej. un código de servicio que no está en el tarifario: el mensaje le sirve al usuario
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {

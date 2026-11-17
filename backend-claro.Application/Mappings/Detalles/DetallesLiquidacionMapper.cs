@@ -17,7 +17,9 @@ public static class DetalleLiquidacionMapper
             PrecioUnitario = request.PrecioUnitario,
             Cantidad  = request.Cantidad,
             PrecioTotal = request.PrecioTotal,
-            Tipo = request.Tipo
+            Tipo = request.Tipo,
+            CodigoServicio = request.CodigoServicio,
+            CodigoTarifario = request.CodigoTarifario,
         };
     }
 

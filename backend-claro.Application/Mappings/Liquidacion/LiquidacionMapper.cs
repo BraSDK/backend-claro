@@ -32,6 +32,7 @@ public static class LiquidacionMapper
             NombreSubTipoOrden = request.NombreSubTipoOrden,
             FechaProgramacion = request.FechaProgramacion,
             CodigoServicio = request.ServicioCodigo,
+            HojaId = request.HojaId,
             NombreTecnico = request.NombreTecnico,
             EstadoSistema = request.EstadoSistema,
             DetallesLiquidacion = request.Detalles.Select( d => d.ToResponse()).ToList(),

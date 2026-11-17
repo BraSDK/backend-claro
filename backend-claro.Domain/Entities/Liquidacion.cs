@@ -64,6 +64,11 @@ public class Liquidacion : IAuditable
     // Pago de Claro (lote) en el que se registró esta SOT. null = auditada pero todavía sin pago registrado
     public int? PagoClaroId {get; set;}
     public PagoClaro? PagoClaro {get; set;}
+
+    // Hoja (mes) a la que pertenece: la asigna el back según FechaCreacion, el front no la manda
+    public int HojaId {get; set;}
+    public Hoja Hoja {get; set;} = null!;
+
     //OBSERVACIONES
 
     public ICollection<ObservacionLiquidacion> Observaciones {get; set;} = new List<ObservacionLiquidacion>();
@@ -88,6 +93,29 @@ public class Liquidacion : IAuditable
             ?? throw new NotFoundException($"No existe el detalle {detalleId} en esta liquidación");
 
         Detalles.Remove(detalle);
+        RecalcularPrecioTotalReal();
+    }
+
+    // Con código de servicio, el costo de servicio es un detalle con el código y el precio del tarifario
+    // (se crea si la grilla no lo mandó). Sin código, se queda el costo escrito a mano, sin vínculo.
+    public void SincronizarDetalleServicio(Servicio? servicio)
+    {
+        var detalle = Detalles.FirstOrDefault(d => d.EsCostoDeServicio);
+
+        if (servicio is null)
+        {
+            detalle?.QuitarServicio();
+        }
+        else
+        {
+            if (detalle is null)
+            {
+                detalle = new DetalleLiquidacion();
+                Detalles.Add(detalle);
+            }
+            detalle.AsignarServicio(servicio);
+        }
+
         RecalcularPrecioTotalReal();
     }
 

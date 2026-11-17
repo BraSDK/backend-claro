@@ -28,10 +28,11 @@ public class DetalleTrabajoConfiguration : IEntityTypeConfiguration<DetalleLiqui
                .HasForeignKey(d => d.CostoAdicionalId)
                .OnDelete(DeleteBehavior.Restrict);
         
+        // Restrict: borrar un servicio del tarifario no debe borrar detalles ya liquidados (antes era Cascade)
         builder.HasOne( d => d.ServicioDetalle)
                .WithMany()
                .HasForeignKey( d => d.CodigoServicio)
-               .OnDelete(DeleteBehavior.Cascade);
+               .OnDelete(DeleteBehavior.Restrict);
         
         
                

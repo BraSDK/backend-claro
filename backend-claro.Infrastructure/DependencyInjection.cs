@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IReporteService, ReporteService>();
         //services.AddScoped<IConciliacionService, ConciliacionService>();
         services.AddScoped<IAdicionales, AdicionalService>();
+        services.AddScoped<IHojaService, HojaService>();
         services.AddScoped<ILiquidacion, LiquidacionService>();   // sin esto, todo /api/Liquidacion respondía 500
 
         // 5. Configuración JWT

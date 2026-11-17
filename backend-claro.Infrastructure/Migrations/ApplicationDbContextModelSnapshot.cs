@@ -107,6 +107,9 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<int?>("CodigoServicio")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("CodigoTarifario")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Concepto")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -146,6 +149,39 @@ namespace backend_claro.Infrastructure.Migrations
                     b.ToTable("Detalles");
                 });
 
+            modelBuilder.Entity("backend_claro.Domain.Entities.Hoja", b =>
+                {
+                    b.Property<int>("HojaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("HojaId"));
+
+                    b.Property<int>("Anio")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaActualizacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Mes")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("HojaId");
+
+                    b.HasIndex("Anio", "Mes")
+                        .IsUnique();
+
+                    b.ToTable("Hojas");
+                });
+
             modelBuilder.Entity("backend_claro.Domain.Entities.Liquidacion", b =>
                 {
                     b.Property<int>("LiquidacionId")
@@ -180,6 +216,9 @@ namespace backend_claro.Infrastructure.Migrations
 
                     b.Property<DateTime?>("FechaValidacion")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("HojaId")
+                        .HasColumnType("integer");
 
                     b.Property<decimal?>("MontoPagado")
                         .HasColumnType("decimal(18,2)");
@@ -219,6 +258,8 @@ namespace backend_claro.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("LiquidacionId");
+
+                    b.HasIndex("HojaId");
 
                     b.HasIndex("OrdenTrabajoId")
                         .IsUnique();
@@ -535,7 +576,7 @@ namespace backend_claro.Infrastructure.Migrations
                     b.HasOne("backend_claro.Domain.Entities.Servicio", "ServicioDetalle")
                         .WithMany()
                         .HasForeignKey("CodigoServicio")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("backend_claro.Domain.Entities.CostoAdicional", "CostoAdicional")
                         .WithMany()
@@ -557,6 +598,12 @@ namespace backend_claro.Infrastructure.Migrations
 
             modelBuilder.Entity("backend_claro.Domain.Entities.Liquidacion", b =>
                 {
+                    b.HasOne("backend_claro.Domain.Entities.Hoja", "Hoja")
+                        .WithMany("Liquidaciones")
+                        .HasForeignKey("HojaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("backend_claro.Domain.Entities.OrdenTrabajo", "OrdenTrabajo")
                         .WithOne()
                         .HasForeignKey("backend_claro.Domain.Entities.Liquidacion", "OrdenTrabajoId")
@@ -575,6 +622,8 @@ namespace backend_claro.Infrastructure.Migrations
                     b.HasOne("backend_claro.Domain.Entities.Usuario", "Usuario")
                         .WithMany()
                         .HasForeignKey("UsuarioId");
+
+                    b.Navigation("Hoja");
 
                     b.Navigation("OrdenTrabajo");
 
@@ -658,6 +707,11 @@ namespace backend_claro.Infrastructure.Migrations
                 {
                     b.Navigation("Perfil")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("backend_claro.Domain.Entities.Hoja", b =>
+                {
+                    b.Navigation("Liquidaciones");
                 });
 
             modelBuilder.Entity("backend_claro.Domain.Entities.Liquidacion", b =>

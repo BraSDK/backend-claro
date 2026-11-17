@@ -19,7 +19,10 @@ public class DetalleResponseDto
 
     public decimal PrecioTotal {get; set;}
 
-    public TipoDetalle Tipo {get; set;} 
-    
+    public TipoDetalle Tipo {get; set;}
+
+    public int? CodigoServicio {get; set;}     // servicio del tarifario (detalle de tipo SERVICIO)
+    public int? CodigoTarifario {get; set;}    // código con el que se cobró (servicio o adicional)
+
    
 }

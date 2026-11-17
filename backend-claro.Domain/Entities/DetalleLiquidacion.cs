@@ -26,10 +26,16 @@ public class DetalleLiquidacion:IAuditable
     [Column(TypeName = "decimal(18,3)")]
     public decimal PrecioTotal {get; set;}
 
-    public TipoDetalle Tipo {get; set;} 
+    public TipoDetalle Tipo {get; set;}
+
+    // Servicio del tarifario (solo el detalle de tipo SERVICIO)
     public int? CodigoServicio {get; set;}
     public Servicio? ServicioDetalle {get; set;}
-    
+
+    // Código del tarifario con el que se cobró: el del servicio o el del adicional (DECO, DROP...).
+    // Se copia al guardar, igual que el precio, para que la liquidación no cambie si luego cambia el tarifario.
+    public int? CodigoTarifario {get; set;}
+
     public DateTime FechaActualizacion { get ; set; } = DateTime.UtcNow;
     public DateTime FechaCreacion {get; set;} = DateTime.UtcNow;
 
@@ -41,6 +47,7 @@ public class DetalleLiquidacion:IAuditable
             Tipo = TipoDetalle.ADICIONAL;
             Concepto = costoAdicional.Nombre;
             PrecioUnitario = costoAdicional.Precio;
+            CodigoTarifario = costoAdicional.Codigo;
             if (cantidad.HasValue) Cantidad = cantidad.Value;
             CalcularPrecioTotal();
             return;
@@ -53,6 +60,30 @@ public class DetalleLiquidacion:IAuditable
         CalcularPrecioTotal();
     }
 
+
+    // El costo de servicio sale del tarifario: código y precio del servicio, cantidad 1
+    public void AsignarServicio(Servicio servicio)
+    {
+        Tipo = TipoDetalle.SERVICIO;
+        Concepto = ConceptoServicio;
+        CodigoServicio = servicio.Codigo;
+        CodigoTarifario = servicio.Codigo;
+        PrecioUnitario = servicio.Precio;
+        Cantidad = 1;
+        CalcularPrecioTotal();
+    }
+
+    // Sin código de servicio el costo es el que escribieron a mano: se quita el vínculo con el tarifario
+    public void QuitarServicio()
+    {
+        CodigoServicio = null;
+        CodigoTarifario = null;
+    }
+
+    public const string ConceptoServicio = "COSTO DE SERVICIO";
+
+    public bool EsCostoDeServicio =>
+        Tipo == TipoDetalle.SERVICIO && string.Equals(Concepto.Trim(), ConceptoServicio, StringComparison.OrdinalIgnoreCase);
 
     public void CalcularPrecioTotal()
     {

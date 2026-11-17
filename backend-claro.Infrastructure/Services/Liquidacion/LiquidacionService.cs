@@ -12,9 +12,11 @@ namespace backend_claro.Infrastructure.Services;
 public class LiquidacionService : ILiquidacion
 {
     private readonly IApplicationDbContext _context;
-    public LiquidacionService(IApplicationDbContext context,IFileStorageService storage)
+    private readonly IHojaService _hojas;
+    public LiquidacionService(IApplicationDbContext context,IFileStorageService storage, IHojaService hojas)
     {
         _context = context;
+        _hojas = hojas;
     }
     public async Task<PagedResponse<ListarRequestLiquidacionesDto>> ListarAsync(ListParamsLiquidacionesDto request, Rol rolUsuario, int cuentaId)
     {
@@ -51,9 +53,13 @@ public class LiquidacionService : ILiquidacion
             throw new AlreadyExistException("Ya existe una sot liquidada con esta sot");
         }
         var liquidacion = request.ToEntity();
+        if (liquidacion.ServicioCodigo is <= 0) liquidacion.ServicioCodigo = null;   // celda vacía ("" → 0) = sin servicio
+        liquidacion.Hoja = await _hojas.HojaDelMesAsync(liquidacion.FechaCreacion);   // la hoja la decide el mes de creación
+
         var catalogo = await CatalogoAdicionalesAsync();
         foreach (var detalle in liquidacion.Detalles) AplicarPrecio(detalle, catalogo);
-        liquidacion.RecalcularPrecioTotalReal();   // antes quedaba en null al crear y la auditoría no tenía con qué comparar
+        // también recalcula PrecioTotalReal (antes quedaba en null al crear y la auditoría no tenía con qué comparar)
+        liquidacion.SincronizarDetalleServicio(await ServicioDelTarifarioAsync(liquidacion.ServicioCodigo));
 
         // quien escribe la observación es el usuario del token, no el que mande el front
         var usuarioId = await UsuarioDeCuentaAsync(cuentaId);
@@ -75,7 +81,7 @@ public class LiquidacionService : ILiquidacion
         }
 
         // La SOT no se reasigna: es la clave con la que se encontró el registro
-        liquidacion.ServicioCodigo = request.ServicioCodigo;
+        liquidacion.ServicioCodigo = request.ServicioCodigo is > 0 ? request.ServicioCodigo : null;   // celda vacía ("" → 0) = sin servicio
         liquidacion.TipoOrden = request.TipoOrden;
         liquidacion.NombreSubTipoOrden = request.NombreSubTipoOrden;
         liquidacion.FechaProgramacion = DateTime.SpecifyKind(request.FechaProgramacion.Date, DateTimeKind.Utc); // Npgsql (timestamptz) solo acepta UTC
@@ -110,7 +116,10 @@ public class LiquidacionService : ILiquidacion
         {
             liquidacion.EliminarDetalle(item);
         }
-        
+
+        // al final, para que el costo de servicio del tarifario gane sobre el que venga escrito en la grilla
+        liquidacion.SincronizarDetalleServicio(await ServicioDelTarifarioAsync(liquidacion.ServicioCodigo));
+
         liquidacion.PrecioTotalEditable = request.PrecioTotalEditable;
         var teniaNoPago = TieneObservacionNoPago(liquidacion);
         var usuarioObservacion = await UsuarioDeCuentaAsync(cuentaId);
@@ -217,6 +226,8 @@ public class LiquidacionService : ILiquidacion
                     AuditadoPorCuentaId = item.EstadoPago == EstadoPago.Pendiente ? null : cuentaId, 
                     UsuarioId = cuentaId
                 };
+                // la SOT que llega por el Excel y no existía también cae en la hoja de su mes de creación
+                nuevaLiquidacion.Hoja = await _hojas.HojaDelMesAsync(nuevaLiquidacion.FechaCreacion);
 
                 _context.Liquidaciones.Add(nuevaLiquidacion);
                 nuevasImportadas++;
@@ -263,6 +274,12 @@ public class LiquidacionService : ILiquidacion
 
     private static IQueryable<Liquidacion> AplicarFiltros(IQueryable<Liquidacion> query, ListParamsLiquidacionesDto request)
     {
+        // la pestaña activa de la grilla: solo las liquidaciones de esa hoja (sin hojaId = todas, como antes)
+        if (request.HojaId.HasValue)
+        {
+            query = query.Where(l => l.HojaId == request.HojaId.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(request.Buscar))
         {
             var texto = request.Buscar.Trim();
@@ -339,6 +356,15 @@ public class LiquidacionService : ILiquidacion
             .ToDictionary(g => g.Key, g => g.First());
     }
 
+    // El servicio del tarifario para el código de la liquidación (null si no tiene código)
+    private async Task<Servicio?> ServicioDelTarifarioAsync(int? codigo)
+    {
+        if (codigo is null) return null;
+        return await _context.Servicios.FirstOrDefaultAsync(s => s.Codigo == codigo)
+            ?? throw new NotFoundException($"No existe el servicio con código {codigo} en el tarifario");
+    }
+
+    // Adicionales (DECO, REPETIDOR, DROP): precio y código salen del catálogo de precios
     private static void AplicarPrecio(DetalleLiquidacion detalle, Dictionary<string, CostoAdicional> catalogo)
     {
         if (catalogo.TryGetValue(NormalizarConcepto(detalle.Concepto), out var adicional))

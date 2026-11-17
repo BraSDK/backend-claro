@@ -13,6 +13,7 @@ public class ListParamsLiquidacionesDto
         set => _canPag = (value > CanMaxPag) ? CanMaxPag : (value <= 0 ? 10 : value);
     }
     // ===== Filtros (todos opcionales) =====
+    public int? HojaId { get; set; }             // pestaña (mes) de la grilla
     public string? Buscar { get; set; }          // SOT (o parte de ella)
     public Estados? Estado { get; set; }
     public bool? Auditada { get; set; }          // true = auditadas, false = sin auditar
