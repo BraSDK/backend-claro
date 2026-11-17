@@ -10,4 +10,6 @@ public class OrdenResponse
     public Estados Estado { get; set; }
     public int UsuarioId { get; set; }
     public List<ArchivoResponse> Imagenes { get; set; } = new();
+    public EstadoAlmacen? EstadoAlmacen {get;set;}
+    public string? Observacion {get; set;} 
 }

@@ -100,4 +100,23 @@ public class OrdenTrabajoController : ControllerBase
         catch (Exception ex) when (ex is NotFoundException or KeyNotFoundException) { return NotFound(new { error = ex.Message }); }
         catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
     }
+
+    [HttpPatch("{id}/verificar-imagenes")]
+    [Authorize(Roles = $"{nameof(Rol.ADMIN)},{nameof(Rol.ALMACEN)}")]
+    public async Task<IActionResult> ValidarImagen(int id, [FromBody] ValidarImgRequest request)
+    {
+        try
+        {
+            var idUsuario = User.ObtenerUsuarioId();
+            return Ok(await _service.VerificarImagenes(idUsuario,id,request));
+        }
+        catch (Exception ex) when (ex is NotFoundException or KeyNotFoundException) 
+        { 
+            return NotFound(new { error = ex.Message }); 
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message }); 
+        }
+    }
 }

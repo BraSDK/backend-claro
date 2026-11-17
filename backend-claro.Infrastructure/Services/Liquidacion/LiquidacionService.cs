@@ -27,7 +27,7 @@ public class LiquidacionService : ILiquidacion
         var listaLiquidaciones  = await query.AsNoTracking()
                                              .Include( l => l.Detalles)
                                              .Include( l => l.Observaciones)
-                                             .OrderByDescending(l=> l.FechaCreacion)
+                                             .OrderBy(l=> l.FechaCreacion)
                                              .ThenByDescending( l => l.Sot)
                                              .Skip((request.Pagina-1) * request.CanPagina)
                                              .Take(request.CanPagina)

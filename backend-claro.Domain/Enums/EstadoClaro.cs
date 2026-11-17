@@ -7,3 +7,20 @@ public enum EstadoClaro
     NO_COMPLETADO,
     EN_PROGRESO,
 }
+
+
+public enum ImagenValidacionClaro
+{
+    SIN_VALIDAR,
+    CORRECTOs,
+    OBSERVADO
+}
+
+
+
+public enum EstadoAlmacen
+{
+    SIN_VALIDAR,
+    CORRECTO,
+    OBSERVADO
+}

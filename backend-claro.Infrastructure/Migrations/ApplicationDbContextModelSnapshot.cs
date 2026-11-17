@@ -354,6 +354,9 @@ namespace backend_claro.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("EstadoAlmacen")
+                        .HasColumnType("integer");
+
                     b.Property<int>("EstadoCampo")
                         .HasColumnType("integer");
 
@@ -362,6 +365,10 @@ namespace backend_claro.Infrastructure.Migrations
 
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Observacion")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("Sot")
                         .HasColumnType("integer");

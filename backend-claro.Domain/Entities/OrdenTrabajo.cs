@@ -32,5 +32,12 @@ public class OrdenTrabajo : IAuditable
         Archivos.Add(img);
     }
 
+    //
+    public EstadoAlmacen EstadoAlmacen {get; set;}
+
+    public string Observacion {get; set;} =  string.Empty;
+
+    
+
 
 }

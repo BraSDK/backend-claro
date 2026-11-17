@@ -25,7 +25,9 @@ public static class OrdenTrabajoMapper
             TrabajoRealizado = orden.TrabajoRealizado,
             OrdenTrabajoId = orden.OrdenTrabajoId,
             UsuarioId  = orden.UsuarioId,
-            Archivos = orden.Archivos.Select( a => a.ToResponse()).ToList()
+            Archivos = orden.Archivos.Select( a => a.ToResponse()).ToList(),
+            EstadoAlmacen = orden.EstadoAlmacen,
+            Observacion   = orden.Observacion,
         };
     }
     

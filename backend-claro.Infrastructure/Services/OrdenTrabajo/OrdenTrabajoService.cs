@@ -6,7 +6,7 @@ using backend_claro.Domain.Exceptions;
 using backend_claro.Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using backend_claro.Application.Mappings.Ordenes;
-
+using backend_claro.Domain.Enums;
 namespace backend_claro.Infrastructure.Services;
 
 public class OrdenTrabajoService : IOrdenTrabajoService
@@ -168,6 +168,45 @@ public class OrdenTrabajoService : IOrdenTrabajoService
 
         await _context.SaveChangesAsync();   // FechaActualizacion la pone el SaveChanges del DbContext (IAuditable)
         return orden.ToResponse();
+    }
+
+    public async Task<OrdenListaResponse> VerificarImagenes(int idUsuario,int ordenId, ValidarImgRequest request)
+    {
+        var OrdenTrabajoObj = await _context.Ordenes.Include( o => o.Archivos)
+                                                .FirstOrDefaultAsync( o => o.OrdenTrabajoId == ordenId) ?? throw new NotFoundException("NO se pueden cambiar el estado por que esa orden no existe");
+        int sot = OrdenTrabajoObj.Sot;
+
+        OrdenTrabajoObj.EstadoAlmacen = request.EstadoAlmacen;
+        if(request.EstadoAlmacen == EstadoAlmacen.OBSERVADO) OrdenTrabajoObj.Observacion = request.Observacion ?? "";
+
+        var Liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync( l => l.Sot == sot); // no puede arrojar error ya que es independiente de orden trabajo
+        
+        if (Liquidacion is not null)
+        {
+            Console.WriteLine("############################");
+            Console.WriteLine("############################");
+            Console.WriteLine("############################");
+            Console.WriteLine(request.Observacion);
+            Console.WriteLine("############################");
+            Console.WriteLine("############################");
+            Console.WriteLine("############################");
+            Console.WriteLine("############################");
+            Console.WriteLine("############################");
+            Liquidacion.AgregarObservacion(new ObservacionLiquidacion
+                {
+                    LiquidacionId = Liquidacion.LiquidacionId,
+                    Tipo = TipoObservacion.FOTOS ,     // lo asigna el sistema, no el usuario
+                    Texto = request.Observacion,
+                    UsuarioId = idUsuario
+                }
+            );
+        }
+
+        
+
+        await _context.SaveChangesAsync();
+
+        return OrdenTrabajoObj.ToResponse();
     }
 
     public async Task<List<ArchivoResponse>> AgregarArchivosAsync(int ordenId, List<IFormFile> archivos)
