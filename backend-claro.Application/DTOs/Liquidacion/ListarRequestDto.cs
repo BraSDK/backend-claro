@@ -23,6 +23,7 @@ public class ListarRequestLiquidacionesDto
     public decimal? MontoPagado {get; set;}          // lo que pagó Claro
     public string? MesPago { get; set; }
     public string? SemanaPago { get; set; }
+    public List<string> HistorialPeriodos { get; set; } = new();
     public EstadoPago EstadoPago {get; set;}
     public DateTime? FechaValidacion {get; set;}     // null = sin auditar
     public List<ObservacionResponseDto> Observaciones {get; set;} = new();
