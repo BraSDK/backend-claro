@@ -184,15 +184,25 @@ public class LiquidacionService : ILiquidacion
         var pagos = request.Filas
             .Where(f => f.Sot > 0)
             .GroupBy(f => f.Sot)
-            .ToDictionary(g => g.Key, g => (
-                Monto: g.Sum(f => f.MontoPagado),
-                Filas: g.Count(),
-                MesPago: g.Select(f => f.MesPago?.Trim()).FirstOrDefault(x => !string.IsNullOrEmpty(x)),
-                SemanaPago: g.Select(f => f.SemanaPago?.Trim().ToUpperInvariant()).FirstOrDefault(x => !string.IsNullOrEmpty(x)),
-                Observacion: string.Join(" | ", g.Select(f => f.Observacion?.Trim())
-                                              .Where(x => !string.IsNullOrEmpty(x))
-                                              .Distinct(StringComparer.OrdinalIgnoreCase))
-                ));
+            .ToDictionary(g => g.Key, g =>
+            {
+                var filasValidas = g.Any(f => EsOkPago(f.Observacion))
+                    ? g.Where(f => EsOkPago(f.Observacion)).ToList()
+                    : g.ToList();
+
+                return (
+                    Monto: filasValidas.Sum(f => f.MontoPagado),
+                    Filas: filasValidas.Count,
+                    // LastOrDefault garantiza tomar el mes y semana de la ÚLTIMA fila con "OK PAGO"
+                    MesPago: filasValidas.Select(f => f.MesPago?.Trim())
+                                         .LastOrDefault(x => !string.IsNullOrEmpty(x)),
+                    SemanaPago: filasValidas.Select(f => f.SemanaPago?.Trim().ToUpperInvariant())
+                                            .LastOrDefault(x => !string.IsNullOrEmpty(x)),
+                    Observacion: string.Join(" | ", filasValidas.Select(f => f.Observacion?.Trim())
+                                                                 .Where(x => !string.IsNullOrEmpty(x))
+                                                                 .Distinct(StringComparer.OrdinalIgnoreCase))
+                );
+            });
 
         var sots = pagos.Keys.ToList();
         var liquidaciones = await _context.Liquidaciones.AsNoTracking()
@@ -221,7 +231,9 @@ public class LiquidacionService : ILiquidacion
                 SemanaPago = p.Value.SemanaPago,
                 ObservacionExcel = obs,
                 EstadoActual = l?.EstadoPago ?? EstadoPago.Pendiente,
-                EstadoSugerido = SugerirEstado(p.Value.Monto, total, obs),
+                EstadoSugerido = l?.EstadoPago == EstadoPago.SiPago
+                    ? EstadoPago.SiPago
+                    : SugerirEstado(p.Value.Monto, total, obs),
             };
         })
         .OrderBy(f => f.Existe).ThenBy(f => f.Sot)   // primero las que no existen, para que se vean
@@ -321,6 +333,11 @@ public class LiquidacionService : ILiquidacion
             
             // si ya se registró en un pago de Claro, su auditoría queda cerrada (para cambiarla, primero se elimina ese pago)
             if (l.PagoClaroId != null) { enPago.Add(item.Sot); continue; }
+            // Si la SOT ya fue auditada como Pagó, ignorar intentos posteriores sin pago
+            if (l.EstadoPago == EstadoPago.SiPago && item.EstadoPago != EstadoPago.SiPago)
+            {
+                continue;
+            }
             if (l.EstadoSistema == Estados.RECHAZADA)
             {
                 l.EstadoSistema = Estados.IMPORTADA;
