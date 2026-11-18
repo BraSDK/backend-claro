@@ -170,30 +170,34 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         return orden.ToResponse();
     }
 
-    public async Task<OrdenListaResponse> VerificarImagenes(int idUsuario,int ordenId, ValidarImgRequest request)
+    public async Task<OrdenListaResponse> VerificarImagenes(int cuentaId,int ordenId, ValidarImgRequest request)
     {
         var OrdenTrabajoObj = await _context.Ordenes.Include( o => o.Archivos)
                                                 .FirstOrDefaultAsync( o => o.OrdenTrabajoId == ordenId) ?? throw new NotFoundException("NO se pueden cambiar el estado por que esa orden no existe");
         int sot = OrdenTrabajoObj.Sot;
 
-        OrdenTrabajoObj.EstadoAlmacen = request.EstadoAlmacen;
-        if(request.EstadoAlmacen == EstadoAlmacen.OBSERVADO) OrdenTrabajoObj.Observacion = request.Observacion ?? "";
+        // solo una revisión OBSERVADA conserva texto; al aprobar se limpia la observación anterior
+        var observacion = request.EstadoAlmacen == EstadoAlmacen.OBSERVADO ? request.Observacion?.Trim() ?? "" : "";
+        if (request.EstadoAlmacen == EstadoAlmacen.OBSERVADO && observacion.Length == 0)
+            throw new InvalidOperationException("Escribe la observación de las imágenes");
 
-        var Liquidacion = await _context.Liquidaciones.FirstOrDefaultAsync( l => l.Sot == sot); // no puede arrojar error ya que es independiente de orden trabajo
-        
+        OrdenTrabajoObj.EstadoAlmacen = request.EstadoAlmacen;
+        OrdenTrabajoObj.Observacion = observacion;
+
+        // la liquidación puede no existir todavía: en ese caso la toma al crearse (LiquidacionService)
+        var Liquidacion = await _context.Liquidaciones.Include(l => l.Observaciones)
+                                                      .FirstOrDefaultAsync( l => l.Sot == sot);
+
         if (Liquidacion is not null)
         {
-            Liquidacion.AgregarObservacion(new ObservacionLiquidacion
-                {
-                    LiquidacionId = Liquidacion.LiquidacionId,
-                    Tipo = TipoObservacion.FOTOS ,     // lo asigna el sistema, no el usuario
-                    Texto = request.Observacion ?? "",
-                    UsuarioId = idUsuario
-                }
-            );
-        }
+            // el token trae la cuenta; la observación se guarda con el perfil de Usuarios
+            var usuarioId = await _context.Usuarios.Where(u => u.AuthId == cuentaId)
+                                                   .Select(u => (int?)u.Id)
+                                                   .FirstOrDefaultAsync()
+                            ?? throw new NotFoundException("La cuenta no tiene un usuario asociado");
 
-        
+            Liquidacion.SincronizarObservacionFotos(observacion, usuarioId);
+        }
 
         await _context.SaveChangesAsync();
 
