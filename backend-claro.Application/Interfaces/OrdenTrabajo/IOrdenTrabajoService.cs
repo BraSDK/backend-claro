@@ -13,5 +13,5 @@ public interface IOrdenTrabajoService
 
     Task<List<ArchivoResponse>> AgregarArchivosAsync(int ordenId, List<IFormFile> archivos);
     Task EliminarArchivoAsync(int ordenId, int archivoId);
-    Task<OrdenListaResponse> VerificarImagenes (int idUsuario,int ordenId , ValidarImgRequest request);
+    Task<OrdenListaResponse> VerificarImagenes (int cuentaId,int ordenId , ValidarImgRequest request);
 }

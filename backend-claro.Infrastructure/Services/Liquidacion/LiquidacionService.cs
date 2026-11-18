@@ -78,6 +78,16 @@ public class LiquidacionService : ILiquidacion
         // quien escribe la observación es el usuario del token, no el que mande el front
         var usuarioId = await UsuarioDeCuentaAsync(cuentaId);
         foreach (var observacion in liquidacion.Observaciones) observacion.UsuarioId = usuarioId ?? observacion.UsuarioId;
+
+        // si almacén observó las fotos antes de que existiera la liquidación, se trae esa observación
+        var observacionesFotos = await ObservacionesDeFotosAsync(new List<long> { liquidacion.Sot });
+        if (observacionesFotos.TryGetValue(liquidacion.Sot, out var observacionFotos))
+        {
+            liquidacion.SincronizarObservacionFotos(
+                observacionFotos,
+                usuarioId ?? throw new NotFoundException("La cuenta no tiene un usuario asociado"));
+        }
+
         AplicarObservacionNoPago(liquidacion, teniaNoPago: false);
         _context.Liquidaciones.Add(liquidacion);
         await _context.SaveChangesAsync();
@@ -293,6 +303,7 @@ public class LiquidacionService : ILiquidacion
         int nuevasImportadas = 0;
 
         var usuarioId = await UsuarioDeCuentaAsync(cuentaId) ?? throw new NotFoundException("Usuario no encontrado");
+        var observacionesFotos = await ObservacionesDeFotosAsync(sots.Where(s => !liquidaciones.ContainsKey(s)).ToList());
 
         foreach (var item in request.Items)
         {
@@ -323,6 +334,11 @@ public class LiquidacionService : ILiquidacion
                        Tipo = TipoObservacion.NO_PAGO,
                        Texto = item.ObservacionExcel 
                     });
+                }
+
+                if (observacionesFotos.TryGetValue(item.Sot, out var observacionFotos))
+                {
+                    nuevaLiquidacion.SincronizarObservacionFotos(observacionFotos, usuarioId);
                 }
 
                 _context.Liquidaciones.Add(nuevaLiquidacion);
@@ -575,6 +591,23 @@ public class LiquidacionService : ILiquidacion
 
     private static bool TieneObservacionNoPago(Liquidacion liquidacion) =>
         liquidacion.Observaciones.Any(o => o.Tipo == TipoObservacion.NO_PAGO && !string.IsNullOrWhiteSpace(o.Texto));
+
+    // SOT cuyas fotos están observadas por almacén → texto de la observación
+    private async Task<Dictionary<long, string>> ObservacionesDeFotosAsync(List<long> sots)
+    {
+        if (sots.Count == 0) return new Dictionary<long, string>();
+
+        var ordenes = await _context.Ordenes
+            .AsNoTracking()
+            .Where(o => sots.Contains((long)o.Sot) && o.EstadoAlmacen == EstadoAlmacen.OBSERVADO && o.Observacion != "")
+            .OrderByDescending(o => o.FechaActualizacion)
+            .Select(o => new { o.Sot, o.Observacion })
+            .ToListAsync();
+
+        return ordenes
+            .GroupBy(o => (long)o.Sot)
+            .ToDictionary(g => g.Key, g => g.First().Observacion);
+    }
 
     private async Task<int?> UsuarioDeCuentaAsync(int cuentaId) =>
         await _context.Usuarios.Where(u => u.AuthId == cuentaId).Select(u => (int?)u.Id).FirstOrDefaultAsync();

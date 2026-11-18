@@ -147,6 +147,34 @@ public class Liquidacion : IAuditable
         Observaciones.Add(observacion);
     }
 
+    // Deja una sola observación de FOTOS con lo que indicó almacén; sin texto, la quita.
+    public void SincronizarObservacionFotos(string? texto, int usuarioId)
+    {
+        const int LargoMaximo = 200;   // ObservacionLiquidacion.Texto
+        var limpio = texto?.Trim() ?? string.Empty;
+        if (limpio.Length > LargoMaximo) limpio = limpio[..LargoMaximo];
+
+        var existentes = Observaciones.Where(o => o.Tipo == TipoObservacion.FOTOS).ToList();
+        var actual = limpio.Length > 0 ? existentes.FirstOrDefault() : null;
+
+        foreach (var sobrante in existentes.Where(o => o != actual)) Observaciones.Remove(sobrante);
+        if (limpio.Length == 0) return;
+
+        if (actual is null)
+        {
+            AgregarObservacion(new ObservacionLiquidacion
+            {
+                Tipo = TipoObservacion.FOTOS,
+                Texto = limpio,
+                UsuarioId = usuarioId,
+            });
+        }
+        else
+        {
+            actual.EditarObservacion(actual.MotivoObservacionId, limpio);
+        }
+    }
+
     public void EditarObservacion(int id, int? motivoObservacionId, string? texto)
     {
         var observacion = Observaciones.FirstOrDefault(o => o.ObservacionLiquidacionId == id) ?? throw new NotFoundException("Observación no encontrada");
