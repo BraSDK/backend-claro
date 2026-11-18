@@ -70,6 +70,7 @@ public class Liquidacion : IAuditable
 
     [MaxLength(10)]
     public string? SemanaPago { get; set; }   // Ej: "S1", "S2", "S3", "S4"
+    public List<string> HistorialPeriodos { get; set; } = new();
 
     // Pago de Claro (lote) en el que se registró esta SOT. null = auditada pero todavía sin pago registrado
     public int? PagoClaroId {get; set;}

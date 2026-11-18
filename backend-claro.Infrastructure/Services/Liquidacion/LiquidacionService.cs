@@ -324,6 +324,19 @@ public class LiquidacionService : ILiquidacion
                 l.EstadoSistema = Estados.IMPORTADA;
             }
 
+            // 1. Verificar cambio de periodo ANTES de sobrescribir EstadoPago y MontoPagado
+            bool vienePeriodoExcel = !string.IsNullOrWhiteSpace(item.MesPago) || !string.IsNullOrWhiteSpace(item.SemanaPago);
+            bool cambioPeriodo = vienePeriodoExcel &&
+                                !string.IsNullOrWhiteSpace(l.SemanaPago) &&
+                                (!string.Equals(l.SemanaPago, item.SemanaPago?.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                                !string.Equals(l.MesPago, item.MesPago?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+            if (cambioPeriodo)
+            {
+                var obsPrevia = l.Observaciones.FirstOrDefault(o => o.Tipo == TipoObservacion.NO_PAGO)?.Texto ?? "";
+                l.HistorialPeriodos.Add($"{l.MesPago}|{l.SemanaPago}|{(int)l.EstadoPago}|{l.MontoPagado ?? 0:0.00}|{obsPrevia}");
+            }
+
             l.EstadoPago = item.EstadoPago;
             l.MontoPagado = item.MontoPagado;
             l.PrecioTotalEditable = item.PrecioTotalEditable;   // null = se cobra el calculado
@@ -416,6 +429,11 @@ public class LiquidacionService : ILiquidacion
             // Si no seleccionaron ningún filtro de estado en React, 
             // OCULTAMOS las SOTs rechazadas por defecto para mantener limpia la tabla principal.
             query = query.Where(l => l.EstadoSistema != Estados.RECHAZADA);
+        }
+
+        if (request.ExcluirImportadas)
+        {
+            query = query.Where(l => l.EstadoSistema != Estados.IMPORTADA);
         }
 
         return query;

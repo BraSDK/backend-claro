@@ -22,6 +22,7 @@ public class ListParamsLiquidacionesDto
     public string? MesPago { get; set; }
     public string? SemanaPago { get; set; }
     public EstadoPago? EstadoPago { get; set; }
+    public bool ExcluirImportadas { get; set; } = false;
     public DateTime? Desde { get; set; }
     public DateTime? Hasta { get; set; }         // inclusive (se toma hasta el final del día)
 }

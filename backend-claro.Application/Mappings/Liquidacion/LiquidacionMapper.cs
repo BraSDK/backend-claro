@@ -43,6 +43,7 @@ public static class LiquidacionMapper
             MontoPagado = request.MontoPagado,
             MesPago = request.MesPago,
             SemanaPago = request.SemanaPago,
+            HistorialPeriodos = request.HistorialPeriodos ?? new(),
             EstadoPago = request.EstadoPago,
             FechaValidacion = request.FechaValidacion,
             Observaciones = request.Observaciones.Select(o => new ObservacionResponseDto
