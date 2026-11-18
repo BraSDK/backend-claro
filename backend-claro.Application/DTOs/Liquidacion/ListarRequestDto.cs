@@ -15,6 +15,7 @@ public class ListarRequestLiquidacionesDto
     public Estados EstadoSistema {get; set;} = Estados.INGRESADA;
     public int? CodigoServicio {get;set;}
     public int HojaId {get;set;}   // hoja (mes) a la que pertenece
+    public string? DocTecnico {get;set;}   // DNI del técnico (null si el nombre no es de un técnico registrado)
     public List<DetalleResponseDto> DetallesLiquidacion { get; set; } = new();
            // vacío = nada eliminado
     public decimal? PrecioTotalEditable {get; set;} //para guardar lo del campo editado en el excel

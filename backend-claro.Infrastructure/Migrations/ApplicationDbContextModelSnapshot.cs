@@ -196,6 +196,10 @@ namespace backend_claro.Infrastructure.Migrations
                     b.Property<decimal?>("Descuento")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("DocTecnico")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<int>("EstadoPago")
                         .HasColumnType("integer");
 

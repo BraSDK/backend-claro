@@ -33,6 +33,7 @@ public static class LiquidacionMapper
             FechaProgramacion = request.FechaProgramacion,
             CodigoServicio = request.ServicioCodigo,
             HojaId = request.HojaId,
+            DocTecnico = request.DocTecnico,
             NombreTecnico = request.NombreTecnico,
             EstadoSistema = request.EstadoSistema,
             DetallesLiquidacion = request.Detalles.Select( d => d.ToResponse()).ToList(),

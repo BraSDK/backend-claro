@@ -19,6 +19,10 @@ public class Liquidacion : IAuditable
     public String NombreSubTipoOrden {get; set;} = String.Empty;
     public DateTime FechaProgramacion {get; set;}
     public String? NombreTecnico {get; set;} = String.Empty;
+    // DNI del técnico (DocumentoIdentidad de su usuario), igual que OrdenTrabajo.DocTecnico.
+    // Lo pone el back cuando el nombre coincide con un técnico registrado; null si es un nombre libre.
+    [MaxLength(20)]
+    public String? DocTecnico {get; set;}
     public Estados EstadoSistema {get; set;} = Estados.INGRESADA; //EStado en este sistema
 
     //Precios

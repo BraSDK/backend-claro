@@ -5,7 +5,9 @@ namespace backend_claro.Application.DTOs.Liquidaciones;
 public class ListParamsLiquidacionesDto
 {
     public int Pagina {get;set;} =1;
-    private const int  CanMaxPag = 50;
+    // La grilla carga la hoja (mes) completa para hacer scroll como en Sheets: antes el tope era 50 y se perdían filas.
+    // 2000 deja margen sobre un mes grande (~400-1000 SOT) sin permitir pedir la tabla entera sin límite.
+    private const int  CanMaxPag = 2000;
     private int _canPag = 15;
     public int CanPagina
     {

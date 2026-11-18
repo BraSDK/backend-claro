@@ -67,6 +67,7 @@ public class LiquidacionService : ILiquidacion
         var liquidacion = request.ToEntity();
         if (liquidacion.ServicioCodigo is <= 0) liquidacion.ServicioCodigo = null;   // celda vacía ("" → 0) = sin servicio
         liquidacion.Hoja = await _hojas.HojaDelMesAsync(liquidacion.FechaCreacion);   // la hoja la decide el mes de creación
+        await AsignarTecnicoAsync(liquidacion, request.NombreTecnico);
 
         var catalogo = await CatalogoAdicionalesAsync();
         foreach (var detalle in liquidacion.Detalles) AplicarPrecio(detalle, catalogo);
@@ -108,7 +109,7 @@ public class LiquidacionService : ILiquidacion
         liquidacion.TipoOrden = request.TipoOrden;
         liquidacion.NombreSubTipoOrden = request.NombreSubTipoOrden;
         liquidacion.FechaProgramacion = DateTime.SpecifyKind(request.FechaProgramacion.Date, DateTimeKind.Utc); // Npgsql (timestamptz) solo acepta UTC
-        liquidacion.NombreTecnico = request.NombreTecnico ?? "sin tecnico";
+        await AsignarTecnicoAsync(liquidacion, request.NombreTecnico);
         liquidacion.EstadoSistema = request.EstadoSistema;
 
         var catalogo = await CatalogoAdicionalesAsync();
@@ -451,6 +452,28 @@ public class LiquidacionService : ILiquidacion
         return adicionales
             .GroupBy(a => NormalizarConcepto(a.Nombre))
             .ToDictionary(g => g.Key, g => g.First());
+    }
+
+    // ===== Técnico =====
+    // La grilla manda solo el nombre. Si coincide con un técnico registrado (sin importar mayúsculas ni espacios),
+    // se guarda su DNI y su nombre tal como está registrado; así el dashboard puede agrupar por DNI.
+    // Si no coincide, queda el nombre escrito y DocTecnico = null.
+    private async Task AsignarTecnicoAsync(Liquidacion liquidacion, string? nombre)
+    {
+        var escrito = nombre?.Trim() ?? string.Empty;
+        liquidacion.NombreTecnico = escrito;
+        liquidacion.DocTecnico = null;
+        if (escrito.Length == 0) return;
+
+        var buscado = escrito.ToLower();
+        var tecnico = await _context.Usuarios
+            .Where(u => u.Cuenta.Rol == Rol.TECNICO && u.NombreCompleto.Trim().ToLower() == buscado)
+            .Select(u => new { u.NombreCompleto, u.DocumentoIdentidad })
+            .FirstOrDefaultAsync();
+
+        if (tecnico is null) return;
+        liquidacion.NombreTecnico = tecnico.NombreCompleto.Trim();
+        liquidacion.DocTecnico = string.IsNullOrWhiteSpace(tecnico.DocumentoIdentidad) ? null : tecnico.DocumentoIdentidad.Trim();
     }
 
     // El servicio del tarifario para el código de la liquidación (null si no tiene código)
