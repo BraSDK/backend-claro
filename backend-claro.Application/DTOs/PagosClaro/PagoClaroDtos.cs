@@ -48,7 +48,8 @@ public class ListarMultasRequest : RangoFechasDto
 public class CrearPagoClaroRequest
 {
     public DateTime FechaPago { get; set; }
-    public string Comprobante { get; set; } = string.Empty;
+    public string SemanaPago {get;set;} = string.Empty;
+    public string? Comprobante { get; set; } = string.Empty;
     public string? Observacion { get; set; }
     public List<long> Sots { get; set; } = new();
     public List<int> MultaIds { get; set; } = new();
@@ -58,7 +59,7 @@ public class PagoClaroResumenDto
 {
     public int PagoClaroId { get; set; }
     public DateTime FechaPago { get; set; }
-    public string Comprobante { get; set; } = string.Empty;
+    public string? Comprobante { get; set; } = string.Empty;
     public string? Observacion { get; set; }
     public int CantidadSots { get; set; }
     public int Pagadas { get; set; }

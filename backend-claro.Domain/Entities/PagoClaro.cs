@@ -9,10 +9,13 @@ public class PagoClaro : IAuditable
 {
     public int PagoClaroId { get; set; }
 
-    public DateTime FechaPago { get; set; }
-
+    public DateTime FechaPago { get; set; } 
+    //= DateTime.UtcNow;
+    
+    //public string SemanaPago {get;set;} = string.Empty;
+ 
     [MaxLength(60)]
-    public string Comprobante { get; set; } = string.Empty;   // n° de boleta / factura / operación
+    public string? Comprobante { get; set; } = string.Empty;   // n° de boleta / factura / operación
 
     [MaxLength(300)]
     public string? Observacion { get; set; }

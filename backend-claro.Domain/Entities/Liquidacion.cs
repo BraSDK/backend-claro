@@ -80,7 +80,6 @@ public class Liquidacion : IAuditable
     public Hoja Hoja {get; set;} = null!;
 
     //OBSERVACIONES
-
     public ICollection<ObservacionLiquidacion> Observaciones {get; set;} = new List<ObservacionLiquidacion>();
 
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;

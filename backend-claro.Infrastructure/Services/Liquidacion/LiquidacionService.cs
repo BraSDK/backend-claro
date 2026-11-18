@@ -6,6 +6,7 @@ using backend_claro.Domain.Entities;
 using backend_claro.Domain.Enums;
 using backend_claro.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using DocumentFormat.OpenXml;
 
 namespace backend_claro.Infrastructure.Services;
 
@@ -267,7 +268,7 @@ public class LiquidacionService : ILiquidacion
         var (anio, mes) = Hoja.PeriodoDe(DateTime.UtcNow);
         var hojaActual = await _context.Hojas
             .FirstOrDefaultAsync(h => h.Anio == anio && h.Mes ==mes);
-
+            
         if (hojaActual is null)
         {
             hojaActual = Hoja.NuevaParaPeriodo(anio, mes);
@@ -279,7 +280,7 @@ public class LiquidacionService : ILiquidacion
         var sotsNuevas = new List<long>();
         int nuevasImportadas = 0;
 
-        var usuarioId = await UsuarioDeCuentaAsync(cuentaId);
+        var usuarioId = await UsuarioDeCuentaAsync(cuentaId) ?? throw new NotFoundException("Usuario no encontrado");
 
         foreach (var item in request.Items)
         {
@@ -291,7 +292,7 @@ public class LiquidacionService : ILiquidacion
                 {
                     Sot = item.Sot,
                     EstadoSistema = Estados.IMPORTADA,
-                    MontoPagado = item.MontoPagado,
+                    MontoPagado = item.MontoPagado,  
                     EstadoPago = item.EstadoPago,
                     PrecioTotalEditable = item.PrecioTotalEditable,
                     MesPago = item.MesPago,
@@ -306,6 +307,7 @@ public class LiquidacionService : ILiquidacion
                 if (tieneRechazoExcel)
                 {
                     nuevaLiquidacion.AgregarObservacion(new ObservacionLiquidacion{
+                       UsuarioId = usuarioId,
                        Tipo = TipoObservacion.NO_PAGO,
                        Texto = item.ObservacionExcel 
                     });
@@ -341,6 +343,7 @@ public class LiquidacionService : ILiquidacion
                 {
                     l.AgregarObservacion(new ObservacionLiquidacion
                     {
+                        UsuarioId = usuarioId,
                         Tipo = TipoObservacion.NO_PAGO,
                         Texto = item.ObservacionExcel
                     });

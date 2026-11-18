@@ -103,11 +103,9 @@ public class PagoClaroService : IPagoClaroService
 
     public async Task<int> CrearPagoAsync(CrearPagoClaroRequest request, int cuentaId)
     {
-        if (string.IsNullOrWhiteSpace(request.Comprobante))
-            throw new InvalidOperationException("Ingresa el n° de comprobante del pago");
         var sots = request.Sots.Distinct().ToList();
         if (sots.Count == 0)
-            throw new InvalidOperationException("Elige al menos una SOT auditada");
+            throw new InvalidOperationException("No hay sots para guardar como pagadas");
 
         var liquidaciones = await _context.Liquidaciones.Where(l => sots.Contains(l.Sot)).ToListAsync();
 
@@ -129,7 +127,7 @@ public class PagoClaroService : IPagoClaroService
         var pago = new PagoClaro
         {
             FechaPago = Fecha(request.FechaPago),
-            Comprobante = request.Comprobante.Trim(),
+           // SemanaPago = request.SemanaPago
             Observacion = string.IsNullOrWhiteSpace(request.Observacion) ? null : request.Observacion.Trim(),
             RegistradoPorCuentaId = cuentaId,
         };
